@@ -13,7 +13,6 @@ public static class NoiseGenerator {
     return noise;
   }
 
-
   public static float[,] GenerateNoiseMap(FastNoiseLite noise, int width, int height, float scale  = 1.0f) {
     var points = new float[width, height];
 
@@ -21,8 +20,7 @@ public static class NoiseGenerator {
       for (int z = 0; z < height; z++) {
         float sampleX = x * scale;
         float sampleZ = z * scale;
-        float y = noise.GetNoise2D(sampleX, sampleZ);
-        y = (y + 1) / 2.0f; // Normalize to 0-1
+        float y = noise.GetNoise2D(sampleX, sampleZ) + 1.0f / 2.0f;
         points[x, z] = y;
       }
     }
