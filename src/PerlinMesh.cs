@@ -120,47 +120,48 @@ public partial class PerlinMesh : MeshInstance3D
   }
 
   public void GenerateMesh() {
+    return;
 
-    var noise = NoiseGenerator.Create();
-    noise.Seed = _noiseSeed;
-    noise.Frequency = _noiseFrequency;
-    noise.FractalOctaves = _noiseOctaves;
-    noise.FractalLacunarity = _noiseLacunarity;
-    noise.FractalGain = _noiseGain;
+    // var noise = NoiseGenerator.Create();
+    // noise.Seed = _noiseSeed;
+    // noise.Frequency = _noiseFrequency;
+    // noise.FractalOctaves = _noiseOctaves;
+    // noise.FractalLacunarity = _noiseLacunarity;
+    // noise.FractalGain = _noiseGain;
 
-    var heightMap = NoiseGenerator.GenerateNoiseMap(noise, _width, _height);
-    var st = new SurfaceTool();
-    st.Begin(Mesh.PrimitiveType.Triangles);
+    // var heightMap = NoiseGenerator.GenerateNoiseMap(noise, _width, _height);
+    // var st = new SurfaceTool();
+    // st.Begin(Mesh.PrimitiveType.Triangles);
 
-    for (int x = 0; x < _width - 1; x++)
-    {
-      for (int z = 0; z < _height - 1; z++)
-      {
-        // First triangle
-        st.SetNormal(Vector3.Up);
-        st.SetColor(ColorFromHeight(heightMap[x, z]));
-        st.AddVertex(new Vector3(x, heightMap[x, z] * _heightMultiplier, z));
-        st.SetNormal(Vector3.Up);
-        st.SetColor(ColorFromHeight(heightMap[x + 1, z]));
-        st.AddVertex(new Vector3(x + 1, heightMap[x + 1, z] * _heightMultiplier, z));
-        st.SetNormal(Vector3.Up);
-        st.SetColor(ColorFromHeight(heightMap[x, z + 1]));
-        st.AddVertex(new Vector3(x, heightMap[x, z + 1] * _heightMultiplier, z + 1));
-        // Second triangle
-        st.SetNormal(Vector3.Up);
-        st.SetColor(ColorFromHeight(heightMap[x + 1, z]));
-        st.AddVertex(new Vector3(x + 1, heightMap[x + 1, z] * _heightMultiplier, z));
-        st.SetNormal(Vector3.Up);
-        st.SetColor(ColorFromHeight(heightMap[x + 1, z + 1]));
-        st.AddVertex(new Vector3(x + 1, heightMap[x + 1, z + 1] * _heightMultiplier, z + 1));
-        st.SetNormal(Vector3.Up);
-        st.SetColor(ColorFromHeight(heightMap[x, z + 1]));
-        st.AddVertex(new Vector3(x, heightMap[x, z + 1] * _heightMultiplier, z + 1));
-      }
-    }
+    // for (int x = 0; x < _width - 1; x++)
+    // {
+    //   for (int z = 0; z < _height - 1; z++)
+    //   {
+    //     // First triangle
+    //     st.SetNormal(Vector3.Up);
+    //     st.SetColor(ColorFromHeight(heightMap[x, z]));
+    //     st.AddVertex(new Vector3(x, heightMap[x, z] * _heightMultiplier, z));
+    //     st.SetNormal(Vector3.Up);
+    //     st.SetColor(ColorFromHeight(heightMap[x + 1, z]));
+    //     st.AddVertex(new Vector3(x + 1, heightMap[x + 1, z] * _heightMultiplier, z));
+    //     st.SetNormal(Vector3.Up);
+    //     st.SetColor(ColorFromHeight(heightMap[x, z + 1]));
+    //     st.AddVertex(new Vector3(x, heightMap[x, z + 1] * _heightMultiplier, z + 1));
+    //     // Second triangle
+    //     st.SetNormal(Vector3.Up);
+    //     st.SetColor(ColorFromHeight(heightMap[x + 1, z]));
+    //     st.AddVertex(new Vector3(x + 1, heightMap[x + 1, z] * _heightMultiplier, z));
+    //     st.SetNormal(Vector3.Up);
+    //     st.SetColor(ColorFromHeight(heightMap[x + 1, z + 1]));
+    //     st.AddVertex(new Vector3(x + 1, heightMap[x + 1, z + 1] * _heightMultiplier, z + 1));
+    //     st.SetNormal(Vector3.Up);
+    //     st.SetColor(ColorFromHeight(heightMap[x, z + 1]));
+    //     st.AddVertex(new Vector3(x, heightMap[x, z + 1] * _heightMultiplier, z + 1));
+    //   }
+    // }
 
-    var mesh = st.Commit();
-    this.Mesh = mesh;
+    // var mesh = st.Commit();
+    // this.Mesh = mesh;
   }
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.

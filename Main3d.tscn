@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://kl4an827n7xi"]
+[gd_scene load_steps=6 format=3 uid="uid://kl4an827n7xi"]
 
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
@@ -6,6 +6,8 @@
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_kpg5t"]
 size = Vector2(4, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ly0ex"]
 
 [node name="Root" type="Node3D"]
 
@@ -25,9 +27,11 @@ metadata/_custom_type_script = "uid://s1a3tsmce435"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="MapDisplay"]
 mesh = SubResource("PlaneMesh_kpg5t")
+surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 
 [node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("display")]
 script = ExtResource("3_ly0ex")
 display = NodePath("../MapDisplay")
-MapWidth = 256
-MapHeight = 256
+DrawMode = 1
+NoiseScale = 2.0
+NoiseOctaves = 5
