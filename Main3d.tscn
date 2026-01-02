@@ -3,15 +3,12 @@
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
 [ext_resource type="Script" uid="uid://qxctxw6a5sho" path="res://src/MapGenerator.cs" id="3_ly0ex"]
+[ext_resource type="Curve" uid="uid://b6qh6vdg3sour" path="res://TerrainCurve.tres" id="4_ly0ex"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_kpg5t"]
 size = Vector2(100, 100)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ly0ex"]
-
-[sub_resource type="Curve" id="Curve_kpg5t"]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.41580757, 0), 0.0, 0.0, 0, 0, Vector2(0.8058419, 0.6432177), 4.1225557, 4.1225557, 0, 0, Vector2(0.9982818, 1), 0.0, 0.0, 0, 0]
-point_count = 4
 
 [node name="Root" type="Node3D"]
 
@@ -37,7 +34,8 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 [node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("display")]
 script = ExtResource("3_ly0ex")
 display = NodePath("../MapDisplay")
+RegenerateMapButton = true
+debugDraw = 4
 DrawMode = 2
-HeightCurve = SubResource("Curve_kpg5t")
-NoiseScale = 2.0
-NoiseOctaves = 5
+MeshHeightMultiplier = 8.0
+HeightCurve = ExtResource("4_ly0ex")

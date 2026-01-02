@@ -3,18 +3,21 @@ using Godot;
 
 public static class MeshGenerator
 {
-  public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, Curve heightCurve)
+  public static MeshData GenerateTerrainMesh(
+    float[,] heightMap, float heightMultiplier, Curve heightCurve, int levelOfDetail)
   {
     int width = heightMap.GetLength(0);
     int height = heightMap.GetLength(1);
     float halfWidth = width / 2.0f;
     float halfHeight = height / 2.0f;
+    int simplificationIncrement = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
+    int verticesPerLine = (width - 1) / simplificationIncrement + 1;
 
-    MeshData meshData = new MeshData(width, height);
+    MeshData meshData = new MeshData(verticesPerLine, verticesPerLine);
     int vertexIndex = 0;
-    for (int z = 0; z < height; z++)
+    for (int z = 0; z < height; z += simplificationIncrement)
     {
-      for (int x = 0; x < width; x++)
+      for (int x = 0; x < width; x += simplificationIncrement)
       {
         float heightMult = heightCurve.Sample(heightMap[x, z]) * heightMultiplier;
         float heightValue = heightMap[x, z] * heightMult;
@@ -26,12 +29,12 @@ public static class MeshGenerator
           meshData.AddCWTriangle(
             vertexIndex, // top-left
             vertexIndex + 1,
-            vertexIndex + width
+            vertexIndex + verticesPerLine
           );
           meshData.AddCWTriangle(
             vertexIndex + 1, // top-right
-            vertexIndex + width + 1,
-            vertexIndex + width
+            vertexIndex + verticesPerLine + 1,
+            vertexIndex + verticesPerLine
           );
         }
 

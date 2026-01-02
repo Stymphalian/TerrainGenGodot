@@ -10,9 +10,10 @@ public partial class MapGenerator : Node {
     MESH
   };
 
-
-  private int mapWidth = 100;
-  private int mapHeight = 100;
+  private int mapChunkSize = 241;
+  private int levelOfDetail = 0;
+  // private int mapWidth = 100;
+  // private int mapHeight = 100;
   private Vector2 noiseOffset = new Vector2(0, 0);
   private int noiseSeed = 0;
   private float noiseScale = 1.0f;
@@ -44,6 +45,11 @@ public partial class MapGenerator : Node {
     }
   }
 
+  [Export] public Viewport.DebugDrawEnum debugDraw {
+    get => GetViewport().DebugDraw;
+    set => GetViewport().DebugDraw = value;
+  }
+
   [Export] public DRAW_MODE DrawMode {
     get => drawMode;
     set {
@@ -67,24 +73,25 @@ public partial class MapGenerator : Node {
       GenerateMap();
     }
   }
-  
-  [Export(PropertyHint.Range, "1,1024")]
-  public int MapWidth {
-    get => mapWidth;
+
+  [Export]
+  public int MapChunkSize {
+    get => mapChunkSize;
     set {
-      mapWidth = value;
+      mapChunkSize = value;
       GenerateMap();
     }
   }
 
-  [Export(PropertyHint.Range, "1,1024")]
-  public int MapHeight {
-    get => mapHeight;
+  [Export(PropertyHint.Range, "0,6")]
+  public int LevelOfDetail {
+    get => levelOfDetail;
     set {
-      mapHeight = value;
+      levelOfDetail = value;
       GenerateMap();
     }
   }
+
 
   [Export(PropertyHint.Range, "0.0001,100.0,0.0001")]
   public float NoiseScale {
@@ -165,9 +172,9 @@ public partial class MapGenerator : Node {
   }
 
   public Color[,] GetColorMapFromHeighMap(float[,] heightMap) {
-    Color[,] colorMap = new Color[mapWidth, mapHeight];
-    for (int y = 0; y < mapHeight; y++) {
-      for (int x = 0; x < mapWidth; x++) {
+    Color[,] colorMap = new Color[mapChunkSize, mapChunkSize];
+    for (int y = 0; y < mapChunkSize; y++) {
+      for (int x = 0; x < mapChunkSize; x++) {
         float currentHeight = heightMap[x, y];
 
         foreach (var region in Regions) {
@@ -188,7 +195,7 @@ public partial class MapGenerator : Node {
       noiseLacunarity, noisePersistence
     );
     float[,] noiseMap = NoiseGenerator.GenerateNoiseMap(
-      noise, mapWidth, mapHeight, noiseScale, noiseOffset);
+      noise, mapChunkSize, mapChunkSize, noiseScale, noiseOffset);
     Color[,] colorMap = GetColorMapFromHeighMap(noiseMap);
 
     if (display == null) {
@@ -204,7 +211,8 @@ public partial class MapGenerator : Node {
       Texture2D texture = TextureGenerator.TextureFromHeightMap(noiseMap);
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.MESH) {
-      MeshData meshData = MeshGenerator.GenerateTerrainMesh(noiseMap, heightMultiplier, heightCurve);
+      MeshData meshData = MeshGenerator.GenerateTerrainMesh(
+        noiseMap, heightMultiplier, heightCurve, levelOfDetail);
       Texture2D texture = TextureGenerator.TextureFromColorMap(colorMap);
       display.DrawMesh(meshData, texture);
     }
