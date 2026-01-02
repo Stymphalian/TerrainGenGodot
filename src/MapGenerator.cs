@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Godot;
 using Godot.Collections;
 
@@ -20,6 +21,8 @@ public partial class MapGenerator : Node {
   private float noiseLacunarity = 2.0f;
   private float noisePersistence = 0.5f;
   private DRAW_MODE drawMode = DRAW_MODE.NOISE_MAP;
+  private float heightMultiplier = 10.0f;
+  private Curve heightCurve;
   private TerrainType[] regions = [
     new TerrainType { Name = "Water Deep", Color = new Color(0, 0, 0.75f), Height = 0.3f },
     new TerrainType { Name = "Water Shallow", Color = new Color(0, 0, 0.8f), Height = 0.4f },
@@ -31,13 +34,36 @@ public partial class MapGenerator : Node {
     new TerrainType { Name = "Snow", Color = new Color(1.0f, 1.0f, 1.0f), Height = 1.0f } 
   ];
 
-
   [Export] public MapDisplay display { get; set; }
+
+  // Add an editor button to regenerate the map
+  [Export] public bool RegenerateMapButton {
+    get => false;
+    set {
+      GenerateMap();
+    }
+  }
 
   [Export] public DRAW_MODE DrawMode {
     get => drawMode;
     set {
       drawMode = value;
+      GenerateMap();
+    }
+  }
+
+  [Export] float MeshHeightMultiplier {
+    get => heightMultiplier;
+    set {
+      heightMultiplier = value;
+      GenerateMap();
+    }
+  }
+
+  [Export] Curve HeightCurve {
+    get => heightCurve;
+    set {
+      heightCurve = value;
       GenerateMap();
     }
   }
@@ -132,6 +158,8 @@ public partial class MapGenerator : Node {
     }
   }
 
+
+
   public override void _Ready() {
     GenerateMap();
   }
@@ -176,7 +204,7 @@ public partial class MapGenerator : Node {
       Texture2D texture = TextureGenerator.TextureFromHeightMap(noiseMap);
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.MESH) {
-      MeshData meshData = MeshGenerator.GenerateTerrainMesh(noiseMap);
+      MeshData meshData = MeshGenerator.GenerateTerrainMesh(noiseMap, heightMultiplier, heightCurve);
       Texture2D texture = TextureGenerator.TextureFromColorMap(colorMap);
       display.DrawMesh(meshData, texture);
     }

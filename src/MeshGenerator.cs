@@ -3,7 +3,7 @@ using Godot;
 
 public static class MeshGenerator
 {
-  public static MeshData GenerateTerrainMesh(float[,] heightMap)
+  public static MeshData GenerateTerrainMesh(float[,] heightMap, float heightMultiplier, Curve heightCurve)
   {
     int width = heightMap.GetLength(0);
     int height = heightMap.GetLength(1);
@@ -16,7 +16,8 @@ public static class MeshGenerator
     {
       for (int x = 0; x < width; x++)
       {
-        float heightValue = heightMap[x, z];
+        float heightMult = heightCurve.Sample(heightMap[x, z]) * heightMultiplier;
+        float heightValue = heightMap[x, z] * heightMult;
         meshData.Vertices[vertexIndex] = new Vector3(x - halfWidth, heightValue, z - halfHeight);
         meshData.UVs[vertexIndex] = new Vector2(x / (float)width, z / (float)height);
 

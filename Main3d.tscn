@@ -1,13 +1,17 @@
-[gd_scene load_steps=6 format=3 uid="uid://kl4an827n7xi"]
+[gd_scene load_steps=7 format=3 uid="uid://kl4an827n7xi"]
 
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
 [ext_resource type="Script" uid="uid://qxctxw6a5sho" path="res://src/MapGenerator.cs" id="3_ly0ex"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_kpg5t"]
-size = Vector2(4, 4)
+size = Vector2(100, 100)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ly0ex"]
+
+[sub_resource type="Curve" id="Curve_kpg5t"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.41580757, 0), 0.0, 0.0, 0, 0, Vector2(0.8058419, 0.6432177), 4.1225557, 4.1225557, 0, 0, Vector2(0.9982818, 1), 0.0, 0.0, 0, 0]
+point_count = 4
 
 [node name="Root" type="Node3D"]
 
@@ -15,7 +19,7 @@ size = Vector2(4, 4)
 transform = Transform3D(1, 0, 0, 0, 0.31134, 0.9502986, 0, -0.9502986, 0.31134, 0, 26.021576, 18.30135)
 
 [node name="MainCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 5, 0)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 50.5002, 0)
 current = true
 script = ExtResource("1_6t2qg")
 MoveSpeed = 20.0
@@ -26,6 +30,7 @@ meshInstance = NodePath("MeshInstance3D")
 metadata/_custom_type_script = "uid://s1a3tsmce435"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="MapDisplay"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.0916214, 0, 0)
 mesh = SubResource("PlaneMesh_kpg5t")
 surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 
@@ -33,5 +38,6 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 script = ExtResource("3_ly0ex")
 display = NodePath("../MapDisplay")
 DrawMode = 2
+HeightCurve = SubResource("Curve_kpg5t")
 NoiseScale = 2.0
 NoiseOctaves = 5
