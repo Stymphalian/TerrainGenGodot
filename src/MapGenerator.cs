@@ -10,7 +10,7 @@ public partial class MapGenerator : Node {
     MESH
   };
 
-  private int mapChunkSize = 241;
+  public const int mapChunkSize = 241;
   private int levelOfDetail = 0;
   // private int mapWidth = 100;
   // private int mapHeight = 100;
@@ -74,14 +74,14 @@ public partial class MapGenerator : Node {
     }
   }
 
-  [Export]
-  public int MapChunkSize {
-    get => mapChunkSize;
-    set {
-      mapChunkSize = value;
-      GenerateMap();
-    }
-  }
+  // [Export]
+  // public int MapChunkSize {
+  //   get => mapChunkSize;
+  //   set {
+  //     mapChunkSize = value;
+  //     GenerateMap();
+  //   }
+  // }
 
   [Export(PropertyHint.Range, "0,6")]
   public int LevelOfDetail {

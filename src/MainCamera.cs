@@ -67,32 +67,32 @@ public partial class MainCamera : Camera3D
 		// Get input direction
 		if (Input.IsKeyPressed(Key.W))
 		{
-      GD.Print("W pressed");
+      // GD.Print("W pressed");
 			velocity -= Transform.Basis.Z;
 		}
 		if (Input.IsKeyPressed(Key.S))
 		{
-      GD.Print("S pressed");
+      // GD.Print("S pressed");
 			velocity += Transform.Basis.Z;
 		}
 		if (Input.IsKeyPressed(Key.A))
 		{
-      GD.Print("A pressed");
+      // GD.Print("A pressed");
 			velocity -= Transform.Basis.X;
 		}
 		if (Input.IsKeyPressed(Key.D))
 		{
-      GD.Print("D pressed");
+      // GD.Print("D pressed");
 			velocity += Transform.Basis.X;
 		}
 		if (Input.IsKeyPressed(Key.R))
 		{
-      GD.Print("R pressed");
+      // GD.Print("R pressed");
 			velocity += Transform.Basis.Y;
 		}
 		if (Input.IsKeyPressed(Key.F))
 		{
-      GD.Print("F pressed");
+      // GD.Print("F pressed");
 			velocity -= Transform.Basis.Y;
 		}
 
