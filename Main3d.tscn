@@ -32,6 +32,6 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 [node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("display")]
 script = ExtResource("3_ly0ex")
 display = NodePath("../MapDisplay")
-DrawMode = 1
+DrawMode = 2
 NoiseScale = 2.0
 NoiseOctaves = 5

@@ -6,6 +6,7 @@ public partial class MapGenerator : Node {
   public enum DRAW_MODE {
     NOISE_MAP,
     COLOR_MAP,
+    MESH
   };
 
 
@@ -167,13 +168,19 @@ public partial class MapGenerator : Node {
       return;
     }
 
-    Texture2D texture;
+    
     if (drawMode == DRAW_MODE.COLOR_MAP) {
-      texture = TextureGenerator.TextureFromColorMap(colorMap);
-    } else {
-      texture = TextureGenerator.TextureFromHeightMap(noiseMap);
+      Texture2D texture = TextureGenerator.TextureFromColorMap(colorMap);
+      display.DrawTexture(texture);
+    } else  if (drawMode == DRAW_MODE.NOISE_MAP) {
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(noiseMap);
+      display.DrawTexture(texture);
+    } else if (drawMode == DRAW_MODE.MESH) {
+      MeshData meshData = MeshGenerator.GenerateTerrainMesh(noiseMap);
+      Texture2D texture = TextureGenerator.TextureFromColorMap(colorMap);
+      display.DrawMesh(meshData, texture);
     }
-    display.DrawTexture(texture);
+    
   }
 
 }
