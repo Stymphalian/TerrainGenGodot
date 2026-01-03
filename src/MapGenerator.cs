@@ -1,6 +1,18 @@
-using System.ComponentModel;
 using Godot;
-using Godot.Collections;
+using System;
+using System.Threading;
+using System.Collections.Generic;
+
+
+public class MapThreadInfo<T> {
+  public readonly Action<T> Callback;
+  public readonly T Data;
+
+  public MapThreadInfo(Action<T> callback, T data) {
+    Callback = callback;
+    Data = data;
+  }
+};
 
 // [Tool]
 public partial class MapGenerator : Node {
@@ -32,45 +44,50 @@ public partial class MapGenerator : Node {
     new TerrainType { Name = "Grass 2", Color = new Color(0.0f, 0.5f, 0.0f), Height = 0.6f },
     new TerrainType { Name = "Rock", Color = new Color(0.55f, 0.4f, 0.25f), Height = 0.7f },
     new TerrainType { Name = "Rock 2", Color = new Color(0.45f, 0.3f, 0.2f), Height = 0.8f },
-    new TerrainType { Name = "Snow", Color = new Color(1.0f, 1.0f, 1.0f), Height = 1.0f } 
+    new TerrainType { Name = "Snow", Color = new Color(1.0f, 1.0f, 1.0f), Height = 1.0f }
   ];
 
   [Export] public MapDisplay display { get; set; }
 
   // Add an editor button to regenerate the map
-  [Export] public bool RegenerateMapButton {
+  [Export]
+  public bool RegenerateMapButton {
     get => false;
     set {
-      GenerateMap();
+      DrawMap();
     }
   }
 
-  [Export] public Viewport.DebugDrawEnum debugDraw {
+  [Export]
+  public Viewport.DebugDrawEnum debugDraw {
     get => GetViewport().DebugDraw;
     set => GetViewport().DebugDraw = value;
   }
 
-  [Export] public DRAW_MODE DrawMode {
+  [Export]
+  public DRAW_MODE DrawMode {
     get => drawMode;
     set {
       drawMode = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
-  [Export] float MeshHeightMultiplier {
+  [Export]
+  float MeshHeightMultiplier {
     get => heightMultiplier;
     set {
       heightMultiplier = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
-  [Export] Curve HeightCurve {
+  [Export]
+  Curve HeightCurve {
     get => heightCurve;
     set {
       heightCurve = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -88,7 +105,7 @@ public partial class MapGenerator : Node {
     get => levelOfDetail;
     set {
       levelOfDetail = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -98,7 +115,7 @@ public partial class MapGenerator : Node {
     get => noiseScale;
     set {
       noiseScale = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -107,7 +124,7 @@ public partial class MapGenerator : Node {
     get => noiseFrequency;
     set {
       noiseFrequency = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -116,7 +133,7 @@ public partial class MapGenerator : Node {
     get => noiseOctaves;
     set {
       noiseOctaves = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -126,7 +143,7 @@ public partial class MapGenerator : Node {
     get => noiseLacunarity;
     set {
       noiseLacunarity = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -135,7 +152,7 @@ public partial class MapGenerator : Node {
     get => noisePersistence;
     set {
       noisePersistence = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -144,7 +161,7 @@ public partial class MapGenerator : Node {
     get => noiseOffset;
     set {
       noiseOffset = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
@@ -153,23 +170,64 @@ public partial class MapGenerator : Node {
     get => noiseSeed;
     set {
       noiseSeed = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
-  [Export] public TerrainType[] Regions {
+  [Export]
+  public TerrainType[] Regions {
     get => regions;
     set {
       regions = value;
-      GenerateMap();
+      DrawMap();
     }
   }
 
-
-
   public override void _Ready() {
-    GenerateMap();
+    DrawMap();
   }
+
+  private Queue<MapThreadInfo<MapData>> mapDataThreadQueue = new Queue<MapThreadInfo<MapData>>();
+  private Queue<MapThreadInfo<MeshData>> meshDataThreadQueue = new Queue<MapThreadInfo<MeshData>>();
+
+  public override void _Process(double delta) {
+    base._Process(delta);
+    if (mapDataThreadQueue.Count > 0) {
+      for (int index = 0; index < mapDataThreadQueue.Count; index++) {
+        var threadData = mapDataThreadQueue.Dequeue();
+        threadData.Callback(threadData.Data);
+      }
+    }
+
+    if (meshDataThreadQueue.Count > 0) {
+      for (int index = 0; index < meshDataThreadQueue.Count; index++) {
+        var threadData = meshDataThreadQueue.Dequeue();
+        threadData.Callback(threadData.Data);
+      }
+    }
+  }
+
+  public void RequestMapData(Action<MapData> callback) {
+    Thread mapDataThread = new Thread(() => {
+      MapData mapData = GenerateMapData();
+      lock (mapDataThreadQueue) {
+        mapDataThreadQueue.Enqueue(new MapThreadInfo<MapData>(callback, mapData));
+      }
+    });
+    mapDataThread.Start();
+  }
+
+  public void RequestMeshData(MapData mapData, Action<MeshData> callback) {
+    Thread meshDataThread = new Thread(() => {
+      MeshData meshData = MeshGenerator.GenerateTerrainMesh(
+        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
+      lock (meshDataThreadQueue) {
+        meshDataThreadQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
+      }
+    });
+    meshDataThread.Start();
+  }
+
 
   public Color[,] GetColorMapFromHeighMap(float[,] heightMap) {
     Color[,] colorMap = new Color[mapChunkSize, mapChunkSize];
@@ -183,13 +241,12 @@ public partial class MapGenerator : Node {
             break;
           }
         }
-
       }
     }
     return colorMap;
   }
 
-  public void GenerateMap() {
+  public MapData GenerateMapData() {
     FastNoiseLite noise = NoiseGenerator.CreateCustom(
       noiseSeed, noiseFrequency, noiseOctaves,
       noiseLacunarity, noisePersistence
@@ -198,25 +255,28 @@ public partial class MapGenerator : Node {
       noise, mapChunkSize, mapChunkSize, noiseScale, noiseOffset);
     Color[,] colorMap = GetColorMapFromHeighMap(noiseMap);
 
+    return new MapData(noiseMap, colorMap);
+  }
+
+  public void DrawMapInEditor() {
     if (display == null) {
       GD.PrintErr("MapDisplay node not found!");
       return;
     }
+    MapData mapData = GenerateMapData();
 
-    
     if (drawMode == DRAW_MODE.COLOR_MAP) {
-      Texture2D texture = TextureGenerator.TextureFromColorMap(colorMap);
+      Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
       display.DrawTexture(texture);
-    } else  if (drawMode == DRAW_MODE.NOISE_MAP) {
-      Texture2D texture = TextureGenerator.TextureFromHeightMap(noiseMap);
+    } else if (drawMode == DRAW_MODE.NOISE_MAP) {
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.MESH) {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        noiseMap, heightMultiplier, heightCurve, levelOfDetail);
-      Texture2D texture = TextureGenerator.TextureFromColorMap(colorMap);
+        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
+      Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
       display.DrawMesh(meshData, texture);
     }
-    
   }
-
 }
+

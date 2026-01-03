@@ -7,6 +7,7 @@ public partial class EndlessTerrain : Node3D
   private int chunkSize = MapGenerator.mapChunkSize - 1;
   private int chunksVisibleInViewDistance = 1;
   private Vector3 playerPosition;
+  private MapGenerator mapGeneratorRef;
   
   private Dictionary<Vector2, TerrainChunk> terrainChunkDictionary = new Dictionary<Vector2, TerrainChunk>();
   private HashSet<Vector2> visibleTerrainChunks = new HashSet<Vector2>(); 
@@ -16,8 +17,12 @@ public partial class EndlessTerrain : Node3D
     GD.Print("EndlessTerrain ready");
     chunkSize = MapGenerator.mapChunkSize - 1;
     chunksVisibleInViewDistance = Mathf.CeilToInt((float)maxViewDist / chunkSize);
-  }
+    playerPosition = GetViewport().GetCamera3D().Position;
+    Position = GetViewport().GetCamera3D().Position;
 
+    mapGeneratorRef = GetNode<MapGenerator>("/root/Root/MapGenerator");
+  }
+  
   public override void _Process(double delta) {
     base._Process(delta);
     playerPosition = GetViewport().GetCamera3D().Position;
@@ -46,6 +51,7 @@ public partial class EndlessTerrain : Node3D
 
         if (!terrainChunkDictionary.ContainsKey(viewedChunkCoord)) {
           TerrainChunk newChunk = new TerrainChunk(
+            mapGeneratorRef,
             new Vector2(
               viewedChunkCoord.X * chunkSize,
               viewedChunkCoord.Y * chunkSize
@@ -54,7 +60,7 @@ public partial class EndlessTerrain : Node3D
           );
           terrainChunkDictionary.Add(viewedChunkCoord, newChunk);
           GetTree().Root.AddChild(newChunk.Mesh);
-          GD.Print($"Chunk at {viewedChunkCoord} position {newChunk.Position}");
+          // GD.Print($"Chunk at {viewedChunkCoord} position {newChunk.Position}");
         }
 
         var chunk = terrainChunkDictionary[viewedChunkCoord];
