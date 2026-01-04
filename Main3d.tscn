@@ -1,10 +1,12 @@
-[gd_scene load_steps=9 format=3 uid="uid://kl4an827n7xi"]
+[gd_scene load_steps=11 format=3 uid="uid://kl4an827n7xi"]
 
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
 [ext_resource type="Script" uid="uid://qxctxw6a5sho" path="res://src/MapGenerator.cs" id="3_ly0ex"]
 [ext_resource type="Curve" uid="uid://b6qh6vdg3sour" path="res://TerrainCurve.tres" id="4_ly0ex"]
 [ext_resource type="Script" uid="uid://ca43crxfb1h0b" path="res://src/EndlessTerrain.cs" id="5_cv8oj"]
+[ext_resource type="Script" uid="uid://bbmkca2kj0hyp" path="res://src/FalloffGenerator.cs" id="5_tcwqj"]
+[ext_resource type="Curve" uid="uid://bcp2lebko8xsn" path="res://FalloffMapCurve.tres" id="6_vlw3j"]
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_kpg5t"]
 size = Vector2(100, 100)
@@ -19,13 +21,12 @@ size = Vector2(100, 100)
 transform = Transform3D(1, 0, 0, 0, 0.31134, 0.9502986, 0, -0.9502986, 0.31134, 0, 26.021576, 18.30135)
 
 [node name="MainCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1000, 0)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 10, 0)
 current = true
 script = ExtResource("1_6t2qg")
 MoveSpeed = 200.0
 
 [node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
-visible = false
 script = ExtResource("2_kpg5t")
 meshInstance = NodePath("MeshInstance3D")
 metadata/_custom_type_script = "uid://s1a3tsmce435"
@@ -44,6 +45,11 @@ DrawMode = 2
 MeshHeightMultiplier = 30.0
 HeightCurve = ExtResource("4_ly0ex")
 NoiseFrequency = 0.012499999999999999
+UseFalloffMap = true
+
+[node name="FalloffGenerator" type="Node" parent="."]
+script = ExtResource("5_tcwqj")
+curve = ExtResource("6_vlw3j")
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
 script = ExtResource("5_cv8oj")
@@ -53,22 +59,30 @@ terrainChunkScale = 5.0
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
 mesh = SubResource("BoxMesh_cv8oj")
 
-[node name="Marker1" type="MeshInstance3D" parent="."]
+[node name="Markers" type="Node3D" parent="."]
+visible = false
+
+[node name="Marker1" type="MeshInstance3D" parent="Markers"]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, -240, 100, 0)
 mesh = SubResource("BoxMesh_cv8oj")
+skeleton = NodePath("../..")
 
-[node name="Marker2" type="MeshInstance3D" parent="."]
+[node name="Marker2" type="MeshInstance3D" parent="Markers"]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 0, 100, 0)
 mesh = SubResource("BoxMesh_cv8oj")
+skeleton = NodePath("../..")
 
-[node name="Marker3" type="MeshInstance3D" parent="."]
+[node name="Marker3" type="MeshInstance3D" parent="Markers"]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 240, 100, 0)
 mesh = SubResource("BoxMesh_cv8oj")
+skeleton = NodePath("../..")
 
-[node name="Marker4" type="MeshInstance3D" parent="."]
+[node name="Marker4" type="MeshInstance3D" parent="Markers"]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 240, 100, 240)
 mesh = SubResource("BoxMesh_cv8oj")
+skeleton = NodePath("../..")
 
-[node name="Marker5" type="MeshInstance3D" parent="."]
+[node name="Marker5" type="MeshInstance3D" parent="Markers"]
 transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 0, 100, 240)
 mesh = SubResource("BoxMesh_cv8oj")
+skeleton = NodePath("../..")

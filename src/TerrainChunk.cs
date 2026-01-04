@@ -134,7 +134,7 @@ public partial class TerrainChunk {
     public int LOD;
     public bool HasRequestedMesh = false;
     public bool HasReceivedMesh = false;
-    public MeshData meshData;
+    // public MeshData meshData;
     public ArrayMesh Mesh;
     private System.Action updateCallback;
 

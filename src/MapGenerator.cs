@@ -19,7 +19,8 @@ public partial class MapGenerator : Node {
   public enum DRAW_MODE {
     NOISE_MAP,
     COLOR_MAP,
-    MESH
+    MESH,
+    FALLOFF_MAP
   };
 
   public const int mapChunkSize = 241;
@@ -46,6 +47,8 @@ public partial class MapGenerator : Node {
     new TerrainType { Name = "Rock 2", Color = new Color(0.45f, 0.3f, 0.2f), Height = 0.8f },
     new TerrainType { Name = "Snow", Color = new Color(1.0f, 1.0f, 1.0f), Height = 1.0f }
   ];
+  private float[,] falloffMap;
+  private bool useFalloffMap = false;
 
   [Export] public MapDisplay display { get; set; }
 
@@ -183,6 +186,24 @@ public partial class MapGenerator : Node {
     }
   }
 
+  [Export]
+  public bool UseFalloffMap {
+    get => useFalloffMap;
+    set {
+      useFalloffMap = value;
+      DrawMapInEditor();
+    }
+  }
+
+  public float[,] FalloffMap  {
+    get {
+      if (falloffMap == null) {
+        falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
+      }
+      return falloffMap;
+    }
+  }
+
   public override void _Ready() {
     DrawMapInEditor();
   }
@@ -229,12 +250,11 @@ public partial class MapGenerator : Node {
   }
 
 
-  public Color[,] GetColorMapFromHeighMap(float[,] heightMap) {
+  public Color[,] GetColorMapFromHeightMap(float[,] heightMap) {
     Color[,] colorMap = new Color[mapChunkSize, mapChunkSize];
     for (int y = 0; y < mapChunkSize; y++) {
       for (int x = 0; x < mapChunkSize; x++) {
         float currentHeight = heightMap[x, y];
-
         foreach (var region in Regions) {
           if (currentHeight <= region.Height) {
             colorMap[x, y] = region.Color;
@@ -253,7 +273,16 @@ public partial class MapGenerator : Node {
     );
     float[,] noiseMap = NoiseGenerator.GenerateNoiseMap(
       noise, mapChunkSize, mapChunkSize, noiseScale, topLeft + noiseOffset);
-    Color[,] colorMap = GetColorMapFromHeighMap(noiseMap);
+    if (useFalloffMap) {
+      var localFalloffMap = FalloffMap;
+      for (int y = 0; y < mapChunkSize; y++) {
+        for (int x = 0; x < mapChunkSize; x++) {
+          noiseMap[x, y] = Mathf.Clamp(noiseMap[x, y] - localFalloffMap[x, y], 0, 1);
+        }
+      }
+    }
+
+    Color[,] colorMap = GetColorMapFromHeightMap(noiseMap);
 
     return new MapData(noiseMap, colorMap);
   }
@@ -276,6 +305,10 @@ public partial class MapGenerator : Node {
         mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
       Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
       display.DrawMesh(meshData, texture);
+    } else if (drawMode == DRAW_MODE.FALLOFF_MAP) {
+      float[,] falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(falloffMap);
+      display.DrawTexture(texture);
     }
   }
 }
