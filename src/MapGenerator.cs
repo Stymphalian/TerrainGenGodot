@@ -54,7 +54,7 @@ public partial class MapGenerator : Node {
   public bool RegenerateMapButton {
     get => false;
     set {
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -69,7 +69,7 @@ public partial class MapGenerator : Node {
     get => drawMode;
     set {
       drawMode = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -78,7 +78,7 @@ public partial class MapGenerator : Node {
     get => heightMultiplier;
     set {
       heightMultiplier = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -87,7 +87,7 @@ public partial class MapGenerator : Node {
     get => heightCurve;
     set {
       heightCurve = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -105,7 +105,7 @@ public partial class MapGenerator : Node {
     get => levelOfDetail;
     set {
       levelOfDetail = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -115,7 +115,7 @@ public partial class MapGenerator : Node {
     get => noiseScale;
     set {
       noiseScale = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -124,7 +124,7 @@ public partial class MapGenerator : Node {
     get => noiseFrequency;
     set {
       noiseFrequency = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -133,7 +133,7 @@ public partial class MapGenerator : Node {
     get => noiseOctaves;
     set {
       noiseOctaves = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -143,7 +143,7 @@ public partial class MapGenerator : Node {
     get => noiseLacunarity;
     set {
       noiseLacunarity = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -152,7 +152,7 @@ public partial class MapGenerator : Node {
     get => noisePersistence;
     set {
       noisePersistence = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -161,7 +161,7 @@ public partial class MapGenerator : Node {
     get => noiseOffset;
     set {
       noiseOffset = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -170,7 +170,7 @@ public partial class MapGenerator : Node {
     get => noiseSeed;
     set {
       noiseSeed = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
@@ -179,12 +179,12 @@ public partial class MapGenerator : Node {
     get => regions;
     set {
       regions = value;
-      DrawMap();
+      DrawMapInEditor();
     }
   }
 
   public override void _Ready() {
-    DrawMap();
+    DrawMapInEditor();
   }
 
   private Queue<MapThreadInfo<MapData>> mapDataThreadQueue = new Queue<MapThreadInfo<MapData>>();
@@ -207,9 +207,9 @@ public partial class MapGenerator : Node {
     }
   }
 
-  public void RequestMapData(Action<MapData> callback) {
+  public void RequestMapData(Vector2 topLeft, Action<MapData> callback) {
     Thread mapDataThread = new Thread(() => {
-      MapData mapData = GenerateMapData();
+      MapData mapData = GenerateMapData(topLeft);
       lock (mapDataThreadQueue) {
         mapDataThreadQueue.Enqueue(new MapThreadInfo<MapData>(callback, mapData));
       }
@@ -217,10 +217,10 @@ public partial class MapGenerator : Node {
     mapDataThread.Start();
   }
 
-  public void RequestMeshData(MapData mapData, Action<MeshData> callback) {
+  public void RequestMeshData(MapData mapData, int lod, Action<MeshData> callback) {
     Thread meshDataThread = new Thread(() => {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
+        mapData.HeightMap, heightMultiplier, heightCurve, lod);
       lock (meshDataThreadQueue) {
         meshDataThreadQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
       }
@@ -246,13 +246,13 @@ public partial class MapGenerator : Node {
     return colorMap;
   }
 
-  public MapData GenerateMapData() {
+  public MapData GenerateMapData(Vector2 topLeft) {
     FastNoiseLite noise = NoiseGenerator.CreateCustom(
       noiseSeed, noiseFrequency, noiseOctaves,
       noiseLacunarity, noisePersistence
     );
     float[,] noiseMap = NoiseGenerator.GenerateNoiseMap(
-      noise, mapChunkSize, mapChunkSize, noiseScale, noiseOffset);
+      noise, mapChunkSize, mapChunkSize, noiseScale, topLeft + noiseOffset);
     Color[,] colorMap = GetColorMapFromHeighMap(noiseMap);
 
     return new MapData(noiseMap, colorMap);
@@ -263,7 +263,7 @@ public partial class MapGenerator : Node {
       GD.PrintErr("MapDisplay node not found!");
       return;
     }
-    MapData mapData = GenerateMapData();
+    MapData mapData = GenerateMapData(Vector2.Zero);
 
     if (drawMode == DRAW_MODE.COLOR_MAP) {
       Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);

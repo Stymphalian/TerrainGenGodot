@@ -19,12 +19,13 @@ size = Vector2(100, 100)
 transform = Transform3D(1, 0, 0, 0, 0.31134, 0.9502986, 0, -0.9502986, 0.31134, 0, 26.021576, 18.30135)
 
 [node name="MainCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, -4.5180817, 50.5002, 0)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 740, 0)
 current = true
 script = ExtResource("1_6t2qg")
 MoveSpeed = 200.0
 
 [node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
+visible = false
 script = ExtResource("2_kpg5t")
 meshInstance = NodePath("MeshInstance3D")
 metadata/_custom_type_script = "uid://s1a3tsmce435"
@@ -40,8 +41,9 @@ display = NodePath("../MapDisplay")
 RegenerateMapButton = true
 debugDraw = 4
 DrawMode = 2
-MeshHeightMultiplier = 8.0
+MeshHeightMultiplier = 30.0
 HeightCurve = ExtResource("4_ly0ex")
+NoiseFrequency = 0.012499999999999999
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
 script = ExtResource("5_cv8oj")
