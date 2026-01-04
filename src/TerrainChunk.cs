@@ -8,7 +8,7 @@ public partial class TerrainChunk {
   public MeshInstance3D Mesh;
   public Rect2 Bounds;
   public Vector2 Position;
-  public int Size;
+  public int ChunkSize;
   private MapData mapData;
   private StandardMaterial3D material;
   private bool hasReceivedMapData = false;
@@ -19,26 +19,28 @@ public partial class TerrainChunk {
   public bool isDirty = true;
 
   public TerrainChunk(
-    MapGenerator mapGenRef, Vector2 chunkPosition, int size,
-    LevelOfDetailSetting[] lodSettings
+    MapGenerator mapGenRef,
+    Vector2 chunkCoords,
+    Vector2 chunkPosition,
+    int chunkSize,
+    LevelOfDetailSetting[] lodSettings,
+    float terrainChunkScale
     ) {
     mapGeneratorRef = mapGenRef;
     this.lodSettings = lodSettings;
     Mesh = new MeshInstance3D();
-    Mesh.Name = "TerrainChunk at " + chunkPosition;
+    Mesh.Name = $"TerrainChunk at {chunkCoords} {chunkPosition}";
     Mesh.Mesh = new PlaneMesh();
-    Mesh.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y);
-    // Mesh.Scale = new Vector3(size, 1.0f, size);
+    // Mesh.Position = new Vector3(chunkPosition.X + chunkSize/2, 0, chunkPosition.Y + chunkSize/2);
+    Mesh.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y) * terrainChunkScale;
+    Mesh.Scale = Vector3.One * terrainChunkScale;
 
-    Bounds = new Rect2(
-      chunkPosition,
-      new Vector2(size, size)
-    );
+    Bounds = new Rect2(chunkPosition, new Vector2(chunkSize, chunkSize));
     Position = chunkPosition;
-    Size = size;
+    ChunkSize = chunkSize;
 
     lodInfos = new LODMesh[lodSettings.Length];
-    for(int i = 0; i < lodSettings.Length; i++) {
+    for (int i = 0; i < lodSettings.Length; i++) {
       lodInfos[i] = new LODMesh(lodSettings[i].lod, OnLODMeshReceived);
     }
 
@@ -56,17 +58,19 @@ public partial class TerrainChunk {
     this.hasReceivedMapData = true;
 
     Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
+    // Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
     material = new StandardMaterial3D {
       AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
       TextureRepeat = false,
+      // AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
     };
     Mesh.SetSurfaceOverrideMaterial(0, material);
   }
 
   public int getLodIndex(float distanceToCenter) {
-    int lodIndex = lodSettings.Length -1;
-    for(int i = 0; i < lodSettings.Length-1; i++) {
+    int lodIndex = lodSettings.Length - 1;
+    for (int i = 0; i < lodSettings.Length - 1; i++) {
       if (distanceToCenter <= lodSettings[i].distanceThreshold) {
         lodIndex = i;
         break;
@@ -79,10 +83,14 @@ public partial class TerrainChunk {
     if (!hasReceivedMapData) {
       return;
     }
-    Vector2 center = Bounds.GetCenter();
     Vector2 playerPos = new Vector2(playerPosition.X, playerPosition.Z);
-
-    float distanceToCenter = (center - playerPos).Length();
+    
+    // Calculate distance to closest point on bounds
+    Vector2 closestPoint = new Vector2(
+      Mathf.Clamp(playerPos.X, Bounds.Position.X, Bounds.Position.X + Bounds.Size.X),
+      Mathf.Clamp(playerPos.Y, Bounds.Position.Y, Bounds.Position.Y + Bounds.Size.Y)
+    );
+    float distanceToCenter = (closestPoint - playerPos).Length();
     bool visible = distanceToCenter <= maxViewDist;
     Mesh.Visible = visible;
 
@@ -96,10 +104,11 @@ public partial class TerrainChunk {
         return;
       }
       if (lodInfos[lodIndex].HasReceivedMesh) {
-        GD.Print($"Updating LOD to {lodIndex}");
+        // GD.Print($"Updating LOD to {lodIndex}");
         previousLODIndex = lodIndex;
         Mesh.Mesh = lodInfos[lodIndex].Mesh;
-      }  
+        // UpdateMaterialColor(lodIndex);
+      }
     }
   }
 
@@ -112,10 +121,20 @@ public partial class TerrainChunk {
     return Mesh.Visible;
   }
 
+  private void UpdateMaterialColor(int lodIndex) {
+    if (material == null) return;
+    // LOD 0 = fully green (0, 1, 0)
+    // As LOD increases, add lighter shades of red
+    float increments = 1.0f / lodSettings.Length;
+    float redComponent = increments + lodIndex * increments; // Increment red by 0.2 for each LOD level
+    material.AlbedoColor = new Color(redComponent, 0, 0);
+  }
+
   class LODMesh {
     public int LOD;
     public bool HasRequestedMesh = false;
     public bool HasReceivedMesh = false;
+    public MeshData meshData;
     public ArrayMesh Mesh;
     private System.Action updateCallback;
 

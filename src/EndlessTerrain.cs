@@ -5,14 +5,16 @@ using System.Linq;
 public partial class EndlessTerrain : Node3D
 {
   // [Export] public int maxViewDist = 500;
+  [Export] public float terrainChunkScale = 1.0f;
   [Export] public LevelOfDetailSetting[] detailLevels = new LevelOfDetailSetting[] {
-    new LevelOfDetailSetting { lod = 0, distanceThreshold = 100 },
-    new LevelOfDetailSetting { lod = 2, distanceThreshold = 250 },
-    new LevelOfDetailSetting { lod = 4, distanceThreshold = 500 },
-    new LevelOfDetailSetting { lod = 8, distanceThreshold = 800 },
+    new LevelOfDetailSetting { lod = 0, distanceThreshold = 200 },
+    new LevelOfDetailSetting { lod = 1, distanceThreshold = 400 },
+    new LevelOfDetailSetting { lod = 2, distanceThreshold = 600 },
+    // new LevelOfDetailSetting { lod = 4, distanceThreshold = 1600 },
   };
   [Export] public float playerMoveThresholdForChunkUpdate = 25.0f;
   private int chunkSize = MapGenerator.mapChunkSize - 1;
+  private int halfChunkSize = (MapGenerator.mapChunkSize - 1) / 2;
   private int chunksVisibleInViewDistance = 1;
   private Vector3 playerPosition;
   private Vector3 previousPlayerPosition;
@@ -30,7 +32,7 @@ public partial class EndlessTerrain : Node3D
     GD.Print("EndlessTerrain ready");
     chunkSize = MapGenerator.mapChunkSize - 1;
     chunksVisibleInViewDistance = Mathf.CeilToInt((float)maxViewDist / chunkSize);
-    playerPosition = GetViewport().GetCamera3D().Position;
+    playerPosition = GetViewport().GetCamera3D().Position / terrainChunkScale;
     previousPlayerPosition = playerPosition;
     Position = GetViewport().GetCamera3D().Position;
 
@@ -40,7 +42,7 @@ public partial class EndlessTerrain : Node3D
   bool firstProcess = true;
   public override void _Process(double delta) {
     base._Process(delta);
-    playerPosition = GetViewport().GetCamera3D().Position;
+    playerPosition = GetViewport().GetCamera3D().Position / terrainChunkScale;
     Position = GetViewport().GetCamera3D().Position;
 
     bool terrainChunksDirty = terrainChunkDictionary.Values.Any(chunk => chunk.isDirty);
@@ -53,9 +55,10 @@ public partial class EndlessTerrain : Node3D
 
   public void UpdateVisibleChunks() {
     Vector2 playerChunkCoord = new Vector2(
-      Mathf.FloorToInt(playerPosition.X / chunkSize),
-      Mathf.FloorToInt(playerPosition.Z / chunkSize)
+      Mathf.FloorToInt((playerPosition.X - halfChunkSize) / chunkSize) + 1,
+      Mathf.FloorToInt((playerPosition.Z - halfChunkSize) / chunkSize) + 1
     );
+    // GD.Print($"Player chunk coord: {playerChunkCoord}");
 
     // Hide previously visible chunks
     foreach(var coord in visibleTerrainChunks) {
@@ -73,12 +76,14 @@ public partial class EndlessTerrain : Node3D
         if (!terrainChunkDictionary.ContainsKey(viewedChunkCoord)) {
           TerrainChunk newChunk = new TerrainChunk(
             mapGeneratorRef,
+            viewedChunkCoord,
             new Vector2(
-              viewedChunkCoord.X * chunkSize,
-              viewedChunkCoord.Y * chunkSize
+              viewedChunkCoord.X * chunkSize - halfChunkSize,
+              viewedChunkCoord.Y * chunkSize - halfChunkSize
             ),
             chunkSize,
-            detailLevels
+            detailLevels,
+            terrainChunkScale
           );
           terrainChunkDictionary.Add(viewedChunkCoord, newChunk);
           GetTree().Root.AddChild(newChunk.Mesh);

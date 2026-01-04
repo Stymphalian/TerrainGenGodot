@@ -19,7 +19,7 @@ size = Vector2(100, 100)
 transform = Transform3D(1, 0, 0, 0, 0.31134, 0.9502986, 0, -0.9502986, 0.31134, 0, 26.021576, 18.30135)
 
 [node name="MainCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 740, 0)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1000, 0)
 current = true
 script = ExtResource("1_6t2qg")
 MoveSpeed = 200.0
@@ -47,7 +47,28 @@ NoiseFrequency = 0.012499999999999999
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
 script = ExtResource("5_cv8oj")
+terrainChunkScale = 5.0
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="EndlessTerrain"]
 transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+mesh = SubResource("BoxMesh_cv8oj")
+
+[node name="Marker1" type="MeshInstance3D" parent="."]
+transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, -240, 100, 0)
+mesh = SubResource("BoxMesh_cv8oj")
+
+[node name="Marker2" type="MeshInstance3D" parent="."]
+transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 0, 100, 0)
+mesh = SubResource("BoxMesh_cv8oj")
+
+[node name="Marker3" type="MeshInstance3D" parent="."]
+transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 240, 100, 0)
+mesh = SubResource("BoxMesh_cv8oj")
+
+[node name="Marker4" type="MeshInstance3D" parent="."]
+transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 240, 100, 240)
+mesh = SubResource("BoxMesh_cv8oj")
+
+[node name="Marker5" type="MeshInstance3D" parent="."]
+transform = Transform3D(50, 0, 0, 0, 50, 0, 0, 0, 50, 0, 100, 240)
 mesh = SubResource("BoxMesh_cv8oj")

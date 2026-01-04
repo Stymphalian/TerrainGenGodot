@@ -39,8 +39,8 @@ public static class NoiseGenerator {
 
     for (int x = 0; x < width; x++) {
       for (int z = 0; z < height; z++) {
-        float sampleX = (x - halfWidth + offset.X) / scale ;
-        float sampleZ = (z - halfHeight + offset.Y) / scale ;
+        float sampleX = (x - halfWidth + offset.X) / scale;
+        float sampleZ = (z - halfHeight + offset.Y) / scale;
         float y = noise.GetNoise2D(sampleX, sampleZ);
         y = (y + 1.0f) / 2.0f;
         points[x, z] = y;
