@@ -5,6 +5,10 @@ using System;
 public partial class MapDisplay : Node3D {
 
   [Export] public MeshInstance3D meshInstance {get; set;}
+  [Export] public bool showNormals {get; set;} = true;
+  [Export] public float normalLength {get; set;} = 1.0f;
+
+  private MeshInstance3D normalVisualizationMesh;
 
   public void DrawTexture(Texture2D texture) {
     // Find the MeshInstance child
@@ -16,6 +20,7 @@ public partial class MapDisplay : Node3D {
       AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
       TextureRepeat = false,
+      ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
     });
   }
 
@@ -30,7 +35,30 @@ public partial class MapDisplay : Node3D {
       AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
       TextureRepeat = false,
+      ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
     });
+
+    // Draw normal visualization if enabled
+    if (showNormals) {
+      if (normalVisualizationMesh == null) {
+        normalVisualizationMesh = new MeshInstance3D();
+        normalVisualizationMesh.Name = "NormalVisualization";
+        AddChild(normalVisualizationMesh);
+      }
+
+      normalVisualizationMesh.Mesh = meshData.CreateNormalVisualizationMesh(normalLength);
+
+      // Load and apply the normal visualization shader
+      var shader = GD.Load<Shader>("res://NormalVisualization.gdshader");
+      var shaderMaterial = new ShaderMaterial();
+      shaderMaterial.Shader = shader;
+      shaderMaterial.SetShaderParameter("normal_color", new Color(0, 1, 1, 1)); // Cyan color
+
+      normalVisualizationMesh.SetSurfaceOverrideMaterial(0, shaderMaterial);
+    } else if (normalVisualizationMesh != null) {
+      normalVisualizationMesh.QueueFree();
+      normalVisualizationMesh = null;
+    }
   }
 
 }

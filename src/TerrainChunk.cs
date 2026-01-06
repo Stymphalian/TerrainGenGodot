@@ -63,6 +63,7 @@ public partial class TerrainChunk {
       AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
       TextureRepeat = false,
+      ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
       // AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
     };
     Mesh.SetSurfaceOverrideMaterial(0, material);
@@ -84,7 +85,7 @@ public partial class TerrainChunk {
       return;
     }
     Vector2 playerPos = new Vector2(playerPosition.X, playerPosition.Z);
-    
+
     // Calculate distance to closest point on bounds
     Vector2 closestPoint = new Vector2(
       Mathf.Clamp(playerPos.X, Bounds.Position.X, Bounds.Position.X + Bounds.Size.X),

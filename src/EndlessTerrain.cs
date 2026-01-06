@@ -2,11 +2,11 @@ using Godot;
 using System.Collections.Generic;
 using System.Linq;
 
-public partial class EndlessTerrain : Node3D
-{
+public partial class EndlessTerrain : Node3D {
   // [Export] public int maxViewDist = 500;
   [Export] public float terrainChunkScale = 1.0f;
-  [Export] public LevelOfDetailSetting[] detailLevels = new LevelOfDetailSetting[] {
+  [Export]
+  public LevelOfDetailSetting[] detailLevels = new LevelOfDetailSetting[] {
     new LevelOfDetailSetting { lod = 0, distanceThreshold = 200 },
     new LevelOfDetailSetting { lod = 1, distanceThreshold = 400 },
     new LevelOfDetailSetting { lod = 2, distanceThreshold = 600 },
@@ -19,16 +19,16 @@ public partial class EndlessTerrain : Node3D
   private Vector3 playerPosition;
   private Vector3 previousPlayerPosition;
   private MapGenerator mapGeneratorRef;
-  
+
   private Dictionary<Vector2, TerrainChunk> terrainChunkDictionary = new Dictionary<Vector2, TerrainChunk>();
   private HashSet<Vector2> visibleTerrainChunks = new HashSet<Vector2>();
 
   public int maxViewDist {
-    get =>  detailLevels[^1].distanceThreshold;
+    get => detailLevels[^1].distanceThreshold;
   }
 
-	// Called when the node enters the scene tree for the first time.
-	public override void _Ready() {
+  // Called when the node enters the scene tree for the first time.
+  public override void _Ready() {
     GD.Print("EndlessTerrain ready");
     chunkSize = MapGenerator.mapChunkSize - 1;
     chunksVisibleInViewDistance = Mathf.CeilToInt((float)maxViewDist / chunkSize);
@@ -61,13 +61,13 @@ public partial class EndlessTerrain : Node3D
     // GD.Print($"Player chunk coord: {playerChunkCoord}");
 
     // Hide previously visible chunks
-    foreach(var coord in visibleTerrainChunks) {
+    foreach (var coord in visibleTerrainChunks) {
       terrainChunkDictionary[coord].SetVisible(false);
     }
     visibleTerrainChunks.Clear();
 
-    for(int yOffset = -chunksVisibleInViewDistance; yOffset <= chunksVisibleInViewDistance; yOffset++) {
-      for(int xOffset = -chunksVisibleInViewDistance; xOffset <= chunksVisibleInViewDistance; xOffset++) {
+    for (int yOffset = -chunksVisibleInViewDistance; yOffset <= chunksVisibleInViewDistance; yOffset++) {
+      for (int xOffset = -chunksVisibleInViewDistance; xOffset <= chunksVisibleInViewDistance; xOffset++) {
         Vector2 viewedChunkCoord = new Vector2(
           playerChunkCoord.X + xOffset,
           playerChunkCoord.Y + yOffset

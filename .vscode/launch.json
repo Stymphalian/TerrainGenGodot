@@ -8,6 +8,7 @@
             "preLaunchTask": "build",
             "program": "godot",
             "args": [
+                "launch",
                 "--path",
                 "${workspaceFolder}"
             ],
@@ -38,7 +39,7 @@
             "args": [
                 "--path",
                 "${workspaceFolder}",
-                "${workspaceFolder}/Main.tscn"
+                "${workspaceFolder}/Main3d.tscn"
             ],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false

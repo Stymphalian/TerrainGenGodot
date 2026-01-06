@@ -39,18 +39,27 @@ public partial class MainCamera : Camera3D
 		if (@event is InputEventMouseMotion mouseMotion && _isRotating)
 		{
 			var mouseDelta = mouseMotion.Relative;
-			
+
 			// Rotate around Y axis (yaw)
 			RotateY(-mouseDelta.X * MouseSensitivity);
-			
+
 			// Rotate around X axis (pitch)
 			RotateObjectLocal(Vector3.Right, -mouseDelta.Y * MouseSensitivity);
-			
+
 			// Clamp pitch to prevent flipping
 			var rotation = RotationDegrees;
 			rotation.X = Mathf.Clamp(rotation.X, -89, 89);
 			RotationDegrees = rotation;
 		}
+
+    // Handle ESC to exit the program
+    if (@event is InputEventKey keyEvent)
+    {
+        if (keyEvent.Keycode == Key.Escape && keyEvent.Pressed)
+        {
+            GetTree().Quit();
+        }
+    }
 	}
 
 	// Called every frame. 'delta' is the elapsed time since the previous frame.
