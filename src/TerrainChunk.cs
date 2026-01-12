@@ -6,6 +6,8 @@ using Godot;
 
 public partial class TerrainChunk {
   public MeshInstance3D Mesh;
+  public StaticBody3D CollisionObject;
+  public CollisionShape3D CollisionShape;
   public Rect2 Bounds;
   public Vector2 Position;
   public int ChunkSize;
@@ -15,6 +17,7 @@ public partial class TerrainChunk {
   private MapGenerator mapGeneratorRef;
   private LevelOfDetailSetting[] lodSettings;
   private LODMesh[] lodInfos;
+  private LODMesh collisionLODMesh;
   private int previousLODIndex = -1;
   public bool isDirty = true;
 
@@ -35,6 +38,13 @@ public partial class TerrainChunk {
     Mesh.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y) * terrainChunkScale;
     Mesh.Scale = Vector3.One * terrainChunkScale;
 
+    CollisionObject = new StaticBody3D();
+    CollisionObject.Name = $"CollisionObject at {chunkCoords} {chunkPosition}";
+    CollisionShape = new CollisionShape3D();
+    CollisionShape.Position = Mesh.Position;
+    CollisionShape.Scale = Mesh.Scale;    
+    CollisionObject.AddChild(CollisionShape);
+
     Bounds = new Rect2(chunkPosition, new Vector2(chunkSize, chunkSize));
     Position = chunkPosition;
     ChunkSize = chunkSize;
@@ -42,6 +52,9 @@ public partial class TerrainChunk {
     lodInfos = new LODMesh[lodSettings.Length];
     for (int i = 0; i < lodSettings.Length; i++) {
       lodInfos[i] = new LODMesh(lodSettings[i].lod, OnLODMeshReceived);
+      if (lodSettings[i].useForCollision) {
+        collisionLODMesh = lodInfos[i];
+      }
     }
 
     mapGeneratorRef.RequestMapData(chunkPosition, OnMapDataReceived);
@@ -97,18 +110,30 @@ public partial class TerrainChunk {
 
     if (visible) {
       int lodIndex = getLodIndex(distanceToCenter);
-      if (!lodInfos[lodIndex].HasRequestedMesh) {
-        lodInfos[lodIndex].RequestMesh(mapGeneratorRef, mapData);
-        return;
+
+      // Load the terrain mesh for this LOD if not already loaded
+      if (previousLODIndex != lodIndex) {
+        if (lodInfos[lodIndex].HasReceivedMesh) {
+          // GD.Print($"Updating LOD to {lodIndex}");
+          previousLODIndex = lodIndex;
+          Mesh.Mesh = lodInfos[lodIndex].Mesh;
+          // CollisionShape.Shape = lodInfos[lodIndex].Mesh.CreateTrimeshShape();
+          // UpdateMaterialColor(lodIndex);
+        } else if (!lodInfos[lodIndex].HasRequestedMesh) {
+          lodInfos[lodIndex].RequestMesh(mapGeneratorRef, mapData);
+        }
       }
-      if (previousLODIndex == lodIndex) {
-        return;
-      }
-      if (lodInfos[lodIndex].HasReceivedMesh) {
-        // GD.Print($"Updating LOD to {lodIndex}");
-        previousLODIndex = lodIndex;
-        Mesh.Mesh = lodInfos[lodIndex].Mesh;
-        // UpdateMaterialColor(lodIndex);
+
+      // Load the collision shape mesh if needed
+      if (lodIndex == 0) {
+        if (collisionLODMesh.HasReceivedMesh && CollisionShape.Shape == null) {
+          GD.Print("Updating collision mesh ");
+          CollisionShape.Shape = collisionLODMesh.Mesh.CreateTrimeshShape();
+        } else if (collisionLODMesh.HasRequestedMesh == false) {
+          GD.Print("Requesting collision LOD mesh ");
+          // CollisionShape.Shape = lodInfos[lodIndex].Mesh.CreateTrimeshShape();
+          collisionLODMesh.RequestMesh(mapGeneratorRef, mapData);
+        }
       }
     }
   }
@@ -145,13 +170,13 @@ public partial class TerrainChunk {
     }
 
     public void RequestMesh(MapGenerator mapGeneratorRef, MapData mapData) {
-      // GD.Print($"Requesting mesh for LOD {LOD}");
+      GD.Print($"Requesting mesh for LOD {LOD}");
       HasRequestedMesh = true;
       mapGeneratorRef.RequestMeshData(mapData, LOD, OnMeshDataReceived);
     }
 
     public void OnMeshDataReceived(MeshData meshData) {
-      // GD.Print($"Mesh data received for LOD {LOD}");
+      GD.Print($"Mesh data received for LOD {LOD}");
       HasReceivedMesh = true;
       Mesh = meshData.CreateMesh();
       updateCallback();

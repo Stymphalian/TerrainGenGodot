@@ -7,9 +7,9 @@ public partial class EndlessTerrain : Node3D {
   [Export] public float terrainChunkScale = 1.0f;
   [Export]
   public LevelOfDetailSetting[] detailLevels = new LevelOfDetailSetting[] {
-    new LevelOfDetailSetting { lod = 0, distanceThreshold = 200 },
-    new LevelOfDetailSetting { lod = 1, distanceThreshold = 400 },
-    new LevelOfDetailSetting { lod = 2, distanceThreshold = 600 },
+    new LevelOfDetailSetting { lod = 0, distanceThreshold = 100 },
+    new LevelOfDetailSetting { lod = 1, distanceThreshold = 250 , useForCollision = true},
+    new LevelOfDetailSetting { lod = 4, distanceThreshold = 400 },
     // new LevelOfDetailSetting { lod = 4, distanceThreshold = 1600 },
   };
   [Export] public float playerMoveThresholdForChunkUpdate = 25.0f;
@@ -87,6 +87,8 @@ public partial class EndlessTerrain : Node3D {
           );
           terrainChunkDictionary.Add(viewedChunkCoord, newChunk);
           GetTree().Root.AddChild(newChunk.Mesh);
+          GetTree().Root.AddChild(newChunk.CollisionObject);
+          // CollisionObject is already a child of Mesh, don't add it separately
           // GD.Print($"Chunk at {viewedChunkCoord} position {newChunk.Position}");
         }
 

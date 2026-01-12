@@ -101,7 +101,7 @@ public class MeshData {
     Array arrays = new Array();
     arrays.Resize((int)Mesh.ArrayType.Max);
 
-    CalculateNormals();
+    // CalculateNormals();
     arrays[(int)Mesh.ArrayType.Vertex] = Vertices;
     arrays[(int)Mesh.ArrayType.TexUV] = UVs;
     arrays[(int)Mesh.ArrayType.Index] = Triangles;

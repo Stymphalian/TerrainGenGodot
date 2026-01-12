@@ -54,6 +54,7 @@ public static class MeshGenerator {
         }
       }
     }
+    meshData.CalculateNormals();
 
     // Return or use the generated mesh as needed
     return meshData;

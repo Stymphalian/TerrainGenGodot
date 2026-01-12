@@ -321,7 +321,7 @@ public partial class MapGenerator : Node {
 
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
         mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
-      meshData.CalculateNormals();
+      // meshData.CalculateNormals();
 
       Color[,] normalColorMap = new Color[mapChunkSize, mapChunkSize];
       for (int y = 0; y < mapChunkSize; y++) {
