@@ -4,14 +4,14 @@ using System.Linq;
 
 public partial class EndlessTerrain : Node3D {
   // [Export] public int maxViewDist = 500;
-  [Export] public float terrainChunkScale = 1.0f;
+  // [Export] public float TerrainChunkScale = 1.0f;
   [Export]
-  public LevelOfDetailSetting[] detailLevels = new LevelOfDetailSetting[] {
+  public LevelOfDetailSetting[] detailLevels = [
     new LevelOfDetailSetting { lod = 0, distanceThreshold = 100 },
     new LevelOfDetailSetting { lod = 1, distanceThreshold = 250 , useForCollision = true},
     new LevelOfDetailSetting { lod = 4, distanceThreshold = 400 },
     // new LevelOfDetailSetting { lod = 4, distanceThreshold = 1600 },
-  };
+  ];
   [Export] public float playerMoveThresholdForChunkUpdate = 25.0f;
   private int chunkSize = MapGenerator.mapChunkSize - 1;
   private int halfChunkSize = (MapGenerator.mapChunkSize - 1) / 2;
@@ -27,22 +27,38 @@ public partial class EndlessTerrain : Node3D {
     get => detailLevels[^1].distanceThreshold;
   }
 
+  public float TerrainChunkScale {
+    get {
+      return mapGeneratorRef.TerrainData.TerrainUniformScale;
+    }
+  }
+
+  public override void _EnterTree() {
+    base._EnterTree();
+    mapGeneratorRef = GetNode<MapGenerator>("/root/Root/MapGenerator");
+    mapGeneratorRef.TerrainData.Changed += () => {
+      GD.Print("TerrainData changed, updating chunk scales");
+      terrainChunkDictionary.Values.ToList().ForEach(
+        chunk => chunk.UpdateTerrainChunkScale(TerrainChunkScale)
+      );
+    };
+  }
+
   // Called when the node enters the scene tree for the first time.
   public override void _Ready() {
+    base._Ready();
     GD.Print("EndlessTerrain ready");
     chunkSize = MapGenerator.mapChunkSize - 1;
     chunksVisibleInViewDistance = Mathf.CeilToInt((float)maxViewDist / chunkSize);
-    playerPosition = GetViewport().GetCamera3D().Position / terrainChunkScale;
+    playerPosition = GetViewport().GetCamera3D().Position / TerrainChunkScale;
     previousPlayerPosition = playerPosition;
     Position = GetViewport().GetCamera3D().Position;
-
-    mapGeneratorRef = GetNode<MapGenerator>("/root/Root/MapGenerator");
   }
 
   bool firstProcess = true;
   public override void _Process(double delta) {
     base._Process(delta);
-    playerPosition = GetViewport().GetCamera3D().Position / terrainChunkScale;
+    playerPosition = GetViewport().GetCamera3D().Position / TerrainChunkScale;
     Position = GetViewport().GetCamera3D().Position;
 
     bool terrainChunksDirty = terrainChunkDictionary.Values.Any(chunk => chunk.isDirty);
@@ -83,7 +99,7 @@ public partial class EndlessTerrain : Node3D {
             ),
             chunkSize,
             detailLevels,
-            terrainChunkScale
+            TerrainChunkScale
           );
           terrainChunkDictionary.Add(viewedChunkCoord, newChunk);
           GetTree().Root.AddChild(newChunk.Mesh);

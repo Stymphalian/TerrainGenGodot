@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="TextureData" load_steps=2 format=3 uid="uid://co5edyae5ucci"]
+
+[ext_resource type="Script" uid="uid://bs42jr8jd03y" path="res://src/assets/TextureData.cs" id="1_g73le"]
+
+[resource]
+script = ExtResource("1_g73le")
+metadata/_custom_type_script = "uid://bs42jr8jd03y"

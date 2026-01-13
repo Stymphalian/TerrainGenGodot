@@ -5,7 +5,7 @@ public partial class FalloffGenerator : Node {
     [Export] public Curve curve;
 
     public static float[,] GenerateFalloffMap(int size) {
-        Curve curve = ResourceLoader.Load<Curve>("res://FalloffMapCurve.tres");
+        Curve curve = ResourceLoader.Load<Curve>("res://assets/FalloffMapCurve.tres");
 
         float[,] falloffMap = new float[size, size];
         for (int y = 0; y < size; y++) {

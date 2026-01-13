@@ -10,10 +10,6 @@ public partial class Player3D : CharacterBody3D
 	private float _gravity = ProjectSettings.GetSetting("physics/3d/default_gravity").AsSingle();
 	private bool _isRotating = false;
 
-	public override void _Ready()
-	{
-	}
-
 	public override void _Input(InputEvent @event)
 	{
 		// Handle mouse button press/release for camera rotation
@@ -46,7 +42,11 @@ public partial class Player3D : CharacterBody3D
 			if (keyEvent.Keycode == Key.Escape && keyEvent.Pressed)
 			{
 				GetTree().Quit();
-			}
+			} else if (keyEvent.Keycode == Key.Key0 && keyEvent.Pressed) {
+        // Reset global positin to origin at 300 height
+        GlobalPosition = new Vector3(0, 300, 0);
+        GD.Print("Player position: " + GlobalPosition);
+      }
 		}
 	}
 

@@ -16,6 +16,8 @@ public partial class MapDisplay : Node3D {
       GD.PrintErr("MeshInstance3D node not found!");
       return;
     }
+    // meshInstance.Mesh = new PlaneMesh();
+    // meshInstance.Scale = Vector3.One * 100 * GetNode<MapGenerator>("/root/Root/MapGenerator").TerrainData.TerrainUniformScale;
     meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {
       AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
@@ -24,15 +26,17 @@ public partial class MapDisplay : Node3D {
     });
   }
 
-  public void DrawMesh(MeshData meshData, Texture2D texture) {
+  // public void DrawMesh(MeshData meshData, Texture2D texture) {
+  public void DrawMesh(MeshData meshData) {
     if (meshInstance == null) {
       GD.PrintErr("MeshInstance3D node not found!");
       return;
     }
 
     meshInstance.Mesh = meshData.CreateMesh();
+    meshInstance.Scale = Vector3.One * GetNode<MapGenerator>("/root/Root/MapGenerator").TerrainData.TerrainUniformScale;
     meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {
-      AlbedoTexture = texture,
+      // AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
       TextureRepeat = false,
       ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting

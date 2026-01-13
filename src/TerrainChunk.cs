@@ -19,6 +19,8 @@ public partial class TerrainChunk {
   private LODMesh[] lodInfos;
   private LODMesh collisionLODMesh;
   private int previousLODIndex = -1;
+  private Vector2 chunkPosition;
+
   public bool isDirty = true;
 
   public TerrainChunk(
@@ -31,6 +33,7 @@ public partial class TerrainChunk {
     ) {
     mapGeneratorRef = mapGenRef;
     this.lodSettings = lodSettings;
+    this.chunkPosition = chunkPosition;
     Mesh = new MeshInstance3D();
     Mesh.Name = $"TerrainChunk at {chunkCoords} {chunkPosition}";
     Mesh.Mesh = new PlaneMesh();
@@ -41,8 +44,8 @@ public partial class TerrainChunk {
     CollisionObject = new StaticBody3D();
     CollisionObject.Name = $"CollisionObject at {chunkCoords} {chunkPosition}";
     CollisionShape = new CollisionShape3D();
-    CollisionShape.Position = Mesh.Position;
-    CollisionShape.Scale = Mesh.Scale;    
+    CollisionShape.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y) * terrainChunkScale;
+    CollisionShape.Scale = Vector3.One * terrainChunkScale;
     CollisionObject.AddChild(CollisionShape);
 
     Bounds = new Rect2(chunkPosition, new Vector2(chunkSize, chunkSize));
@@ -70,10 +73,10 @@ public partial class TerrainChunk {
     this.mapData = mapData;
     this.hasReceivedMapData = true;
 
-    Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
+    // Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
     // Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
     material = new StandardMaterial3D {
-      AlbedoTexture = texture,
+      // AlbedoTexture = texture,
       TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
       TextureRepeat = false,
       ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
@@ -91,6 +94,13 @@ public partial class TerrainChunk {
       }
     }
     return lodIndex;
+  }
+
+  public void UpdateTerrainChunkScale(float terrainChunkScale) {
+    Mesh.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y) * terrainChunkScale;
+    Mesh.Scale = Vector3.One * terrainChunkScale;
+    CollisionShape.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y) * terrainChunkScale;
+    CollisionShape.Scale = Vector3.One * terrainChunkScale;
   }
 
   public void UpdateChunk(Vector3 playerPosition, float maxViewDist) {

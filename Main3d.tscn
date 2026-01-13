@@ -1,13 +1,16 @@
-[gd_scene load_steps=17 format=3 uid="uid://kl4an827n7xi"]
+[gd_scene load_steps=20 format=3 uid="uid://kl4an827n7xi"]
 
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://bf846f14k57u1" path="res://src/DirectionLight.cs" id="1_tjrhv"]
 [ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
 [ext_resource type="Script" uid="uid://qxctxw6a5sho" path="res://src/MapGenerator.cs" id="3_ly0ex"]
-[ext_resource type="Curve" uid="uid://b6qh6vdg3sour" path="res://TerrainCurve.tres" id="4_ly0ex"]
 [ext_resource type="Script" uid="uid://ca43crxfb1h0b" path="res://src/EndlessTerrain.cs" id="5_cv8oj"]
 [ext_resource type="Script" uid="uid://bbmkca2kj0hyp" path="res://src/FalloffGenerator.cs" id="5_tcwqj"]
-[ext_resource type="Curve" uid="uid://bcp2lebko8xsn" path="res://FalloffMapCurve.tres" id="6_vlw3j"]
+[ext_resource type="Resource" uid="uid://d0tjcbjbg30hx" path="res://assets/DefaultNoise.tres" id="6_p00f3"]
+[ext_resource type="Resource" uid="uid://bt7swpfu8mttl" path="res://assets/DefaultTerrain.tres" id="6_usu4c"]
+[ext_resource type="Curve" uid="uid://bcp2lebko8xsn" path="res://assets/FalloffMapCurve.tres" id="6_vlw3j"]
+[ext_resource type="Resource" uid="uid://co5edyae5ucci" path="res://assets/DefaultTexture.tres" id="7_usu4c"]
+[ext_resource type="Material" uid="uid://jppfdq1ow0wl" path="res://assets/DefaultMaterial.tres" id="8_jtuxx"]
 [ext_resource type="Script" uid="uid://84dhm8gf7ma8" path="res://src/Player3D.cs" id="9_player"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tjrhv"]
@@ -63,11 +66,11 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 script = ExtResource("3_ly0ex")
 display = NodePath("../MapDisplay")
 RegenerateMapButton = true
-DrawMode = 2
-MeshHeightMultiplier = 20.0
-HeightCurve = ExtResource("4_ly0ex")
-NoiseFrequency = 0.0075
-UseFalloffMap = true
+DrawMode = 1
+NoiseData = ExtResource("6_p00f3")
+TerrainData = ExtResource("6_usu4c")
+TextureData = ExtResource("7_usu4c")
+TerrainMaterial = ExtResource("8_jtuxx")
 
 [node name="FalloffGenerator" type="Node" parent="."]
 script = ExtResource("5_tcwqj")
@@ -76,7 +79,6 @@ curve = ExtResource("6_vlw3j")
 [node name="EndlessTerrain" type="Node3D" parent="."]
 process_mode = 4
 script = ExtResource("5_cv8oj")
-terrainChunkScale = 2.0
 
 [node name="Markers" type="Node3D" parent="."]
 visible = false
@@ -107,7 +109,7 @@ mesh = SubResource("BoxMesh_cv8oj")
 skeleton = NodePath("../..")
 
 [node name="Player" type="CharacterBody3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 30, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 0)
 script = ExtResource("9_player")
 MoveSpeed = 20.0
 
