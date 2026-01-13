@@ -13,7 +13,10 @@ public class MeshData {
   public int[] BorderTriangles;
   private int borderTriangleIndex = 0;
 
-  public MeshData(int meshLength) {
+  private bool useFlatShading = false;
+
+  public MeshData(int meshLength, bool useFlatShading) {
+    this.useFlatShading = useFlatShading;
     Vertices = new Vector3[meshLength * meshLength];
     Normals = new Vector3[Vertices.Length];
     UVs = new Vector2[meshLength * meshLength];
@@ -47,7 +50,30 @@ public class MeshData {
     }
   }
 
-  public void CalculateNormals() {
+  public void FinishMesh() {
+    if (useFlatShading) {
+      ConvertToFlatShading();
+    }
+    CalculateNormals();  
+  }
+
+  void ConvertToFlatShading() {
+    Vector3[] flatShadedVertices = new Vector3[Triangles.Length];
+    Vector2[] flatShadedUVs = new Vector2[Triangles.Length];
+
+    for(int index = 0; index < Triangles.Length; index++) {
+      flatShadedVertices[index] = Vertices[Triangles[index]];
+      flatShadedUVs[index] = UVs[Triangles[index]];
+      Triangles[index] = index;
+    }
+
+    Vertices = flatShadedVertices;
+    UVs = flatShadedUVs;
+    Normals = new Vector3[Vertices.Length];
+    
+  }
+
+  void CalculateNormals() {
     for (int i = 0; i < Triangles.Length; i += 3) {
       int vertexIndexA = Triangles[i];
       int vertexIndexB = Triangles[i + 1];
@@ -65,7 +91,6 @@ public class MeshData {
       Normals[vertexIndexB] += triangleNormal;
       Normals[vertexIndexC] += triangleNormal;
     }
-
 
     for (int i = 0; i < BorderTriangles.Length; i += 3) {
       int vertexIndexA = BorderTriangles[i];
@@ -105,7 +130,7 @@ public class MeshData {
     arrays[(int)Mesh.ArrayType.Vertex] = Vertices;
     arrays[(int)Mesh.ArrayType.TexUV] = UVs;
     arrays[(int)Mesh.ArrayType.Index] = Triangles;
-    arrays[(int)Mesh.ArrayType.Normal] = Normals;
+    arrays[(int)Mesh.ArrayType.Normal] = Normals;  
 
     mesh.AddSurfaceFromArrays(Mesh.PrimitiveType.Triangles, arrays);
     return mesh;

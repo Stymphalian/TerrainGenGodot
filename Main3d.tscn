@@ -45,13 +45,14 @@ mesh = SubResource("SphereMesh_6rk8u")
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 120, 20, -20)
 current = true
 script = ExtResource("1_6t2qg")
+Mode = 0
 PlayerPath = NodePath("../Player")
 MoveSpeed = 100.0
 
 [node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
-visible = false
 script = ExtResource("2_kpg5t")
 meshInstance = NodePath("MeshInstance3D")
+showNormals = false
 metadata/_custom_type_script = "uid://s1a3tsmce435"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="MapDisplay"]
@@ -62,16 +63,18 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 script = ExtResource("3_ly0ex")
 display = NodePath("../MapDisplay")
 RegenerateMapButton = true
-DrawMode = 4
+DrawMode = 2
 MeshHeightMultiplier = 20.0
 HeightCurve = ExtResource("4_ly0ex")
 NoiseFrequency = 0.0075
+UseFalloffMap = true
 
 [node name="FalloffGenerator" type="Node" parent="."]
 script = ExtResource("5_tcwqj")
 curve = ExtResource("6_vlw3j")
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
+process_mode = 4
 script = ExtResource("5_cv8oj")
 terrainChunkScale = 2.0
 

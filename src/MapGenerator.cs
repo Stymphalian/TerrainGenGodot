@@ -51,6 +51,7 @@ public partial class MapGenerator : Node {
   ];
   private float[,] falloffMap;
   private bool useFalloffMap = false;
+  private bool useFlatShading = false;
 
   [Export] public MapDisplay display { get; set; }
 
@@ -197,6 +198,15 @@ public partial class MapGenerator : Node {
     }
   }
 
+  [Export]
+  public bool UseFlatShading {
+    get => useFlatShading;
+    set {
+      useFlatShading = value;
+      DrawMapInEditor();
+    }
+  }
+
   public float[,] FalloffMap  {
     get {
       if (falloffMap == null) {
@@ -243,7 +253,7 @@ public partial class MapGenerator : Node {
   public void RequestMeshData(MapData mapData, int lod, Action<MeshData> callback) {
     Thread meshDataThread = new Thread(() => {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap, heightMultiplier, heightCurve, lod);
+        mapData.HeightMap, heightMultiplier, heightCurve, lod, useFlatShading);
       lock (meshDataThreadQueue) {
         meshDataThreadQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
       }
@@ -306,7 +316,7 @@ public partial class MapGenerator : Node {
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.MESH) {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
+        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail, useFlatShading);
       Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
       display.DrawMesh(meshData, texture);
     } else if (drawMode == DRAW_MODE.FALLOFF_MAP) {
@@ -320,8 +330,7 @@ public partial class MapGenerator : Node {
       // display.DrawMesh(meshData, texture);
 
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail);
-      // meshData.CalculateNormals();
+        mapData.HeightMap, heightMultiplier, heightCurve, levelOfDetail, useFlatShading);
 
       Color[,] normalColorMap = new Color[mapChunkSize, mapChunkSize];
       for (int y = 0; y < mapChunkSize; y++) {

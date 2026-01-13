@@ -1,5 +1,3 @@
-using System;
-using System.Diagnostics;
 using Godot;
 
 public static class MeshGenerator {
@@ -7,7 +5,7 @@ public static class MeshGenerator {
   // and extending to width,height as the bottom-right corner.
   // This is to match the TerrainChunk generation.
   public static MeshData GenerateTerrainMesh(
-    float[,] heightMap, float heightMultiplier, Curve heightCurve, int levelOfDetail) {
+    float[,] heightMap, float heightMultiplier, Curve heightCurve, int levelOfDetail, bool useFlatShading) {
     int meshLODIncr = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
     int borderLength = heightMap.GetLength(0);
     int meshLength = borderLength - 2 * meshLODIncr;
@@ -31,7 +29,7 @@ public static class MeshGenerator {
       }
     }
 
-    MeshData meshData = new MeshData(verticesPerLine);
+    MeshData meshData = new MeshData(verticesPerLine, useFlatShading);
     for (int z = 0; z < borderLength; z += meshLODIncr) {
       for (int x = 0; x < borderLength; x += meshLODIncr) {
         float heightMult = heightCurve.Sample(heightMap[x, z]) * heightMultiplier;
@@ -54,7 +52,7 @@ public static class MeshGenerator {
         }
       }
     }
-    meshData.CalculateNormals();
+    meshData.FinishMesh();
 
     // Return or use the generated mesh as needed
     return meshData;
@@ -63,7 +61,7 @@ public static class MeshGenerator {
   // Generate a UV sphere mesh with specified radius and resolution, optionally using a heightMap for displacement
   public static MeshData GenerateSphereMesh(float[,] heightMap = null, float baseRadius = 1.0f, float heightMultiplier = 1.0f, int latitudeSegments = 32, int longitudeSegments = 32) {
     int vertexCount = (latitudeSegments + 1) * (longitudeSegments + 1);
-    MeshData meshData = new MeshData(longitudeSegments + 1);
+    MeshData meshData = new MeshData(longitudeSegments + 1, false);
 
     int vertexIndex = 0;
 
@@ -120,7 +118,7 @@ public static class MeshGenerator {
       }
     }
 
-    meshData.CalculateNormals();
+    meshData.FinishMesh();
     return meshData;
   }
 }
