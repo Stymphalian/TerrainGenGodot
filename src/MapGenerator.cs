@@ -2,6 +2,7 @@ using Godot;
 using System;
 using System.Threading;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 
 public class MapThreadInfo<T> {
@@ -30,7 +31,7 @@ public partial class MapGenerator : Node {
   private NoiseData noiseData;
   private TerrainData terrainData;
   private TextureData textureData;
-  private StandardMaterial3D terrainMaterial;
+  private Material terrainMaterial;
 
   private DRAW_MODE drawMode = DRAW_MODE.NOISE_MAP;
 
@@ -105,15 +106,20 @@ public partial class MapGenerator : Node {
   public TextureData TextureData {
     get => textureData;
     set {
+      GD.Print("Setting TextureData");
       textureData = value;
-      textureData.ApplyToMaterial(terrainMaterial);
-      textureData.Changed += DrawMapInEditor;
+      textureData.ApplyToMaterial(terrainMaterial);  
       DrawMapInEditor();
+      textureData.Changed += () => {
+        DrawMapInEditor();
+        textureData.ApplyToMaterial(terrainMaterial);
+      };
+      
     }
   }
 
   [Export]
-  public StandardMaterial3D TerrainMaterial {
+  public Material TerrainMaterial {
     get => terrainMaterial;
     set {
       terrainMaterial = value;
@@ -229,6 +235,13 @@ public partial class MapGenerator : Node {
       }
     }
     // Color[,] colorMap = GetColorMapFromHeightMap(noiseMap);
+
+    textureData.UpdateMeshHeights(
+      (ShaderMaterial)terrainMaterial,
+      terrainData.MinHeight,
+      terrainData.MaxHeight
+    );
+    GD.Print("Min Height: " + terrainData.MinHeight, " Max Height: " + terrainData.MaxHeight);
 
     return new MapData(noiseMap);
   }

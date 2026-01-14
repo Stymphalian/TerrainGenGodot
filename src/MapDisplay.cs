@@ -33,14 +33,18 @@ public partial class MapDisplay : Node3D {
       return;
     }
 
+    MapGenerator mapGeneratorRef =  GetNode<MapGenerator>("/root/Root/MapGenerator");
     meshInstance.Mesh = meshData.CreateMesh();
-    meshInstance.Scale = Vector3.One * GetNode<MapGenerator>("/root/Root/MapGenerator").TerrainData.TerrainUniformScale;
-    meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {
-      // AlbedoTexture = texture,
-      TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
-      TextureRepeat = false,
-      ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
-    });
+    meshInstance.Scale = Vector3.One * mapGeneratorRef.TerrainData.TerrainUniformScale;
+    meshInstance.SetSurfaceOverrideMaterial(0, mapGeneratorRef.TerrainMaterial);
+    // if (material != null) {
+    //   meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {
+    //     // AlbedoTexture = texture,
+    //     TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+    //     TextureRepeat = false,
+    //     ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
+    //   });  
+    // }
 
     // Draw normal visualization if enabled
     if (showNormals) {

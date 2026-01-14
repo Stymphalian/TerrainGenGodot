@@ -12,7 +12,7 @@ public partial class TerrainChunk {
   public Vector2 Position;
   public int ChunkSize;
   private MapData mapData;
-  private StandardMaterial3D material;
+  // private StandardMaterial3D material;
   private bool hasReceivedMapData = false;
   private MapGenerator mapGeneratorRef;
   private LevelOfDetailSetting[] lodSettings;
@@ -75,14 +75,16 @@ public partial class TerrainChunk {
 
     // Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
     // Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
-    material = new StandardMaterial3D {
-      // AlbedoTexture = texture,
-      TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
-      TextureRepeat = false,
-      ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
-      // AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
-    };
-    Mesh.SetSurfaceOverrideMaterial(0, material);
+    // material = new StandardMaterial3D {
+    //   // AlbedoTexture = texture,
+    //   TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+    //   TextureRepeat = false,
+    //   ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
+    //   // AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
+    // };
+    // Mesh.SetSurfaceOverrideMaterial(0, material);
+
+    Mesh.SetSurfaceOverrideMaterial(0, mapGeneratorRef.TerrainMaterial);
   }
 
   public int getLodIndex(float distanceToCenter) {
@@ -158,12 +160,12 @@ public partial class TerrainChunk {
   }
 
   private void UpdateMaterialColor(int lodIndex) {
-    if (material == null) return;
-    // LOD 0 = fully green (0, 1, 0)
-    // As LOD increases, add lighter shades of red
-    float increments = 1.0f / lodSettings.Length;
-    float redComponent = increments + lodIndex * increments; // Increment red by 0.2 for each LOD level
-    material.AlbedoColor = new Color(redComponent, 0, 0);
+    // if (material == null) return;
+    // // LOD 0 = fully green (0, 1, 0)
+    // // As LOD increases, add lighter shades of red
+    // float increments = 1.0f / lodSettings.Length;
+    // float redComponent = increments + lodIndex * increments; // Increment red by 0.2 for each LOD level
+    // material.AlbedoColor = new Color(redComponent, 0, 0);
   }
 
   class LODMesh {

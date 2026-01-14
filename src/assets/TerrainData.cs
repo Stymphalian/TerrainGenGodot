@@ -53,4 +53,17 @@ public partial class TerrainData : Resource {
       EmitChanged();  
     }
   }
+
+
+  public float MinHeight {
+    get {
+      return terrainUniformScale * heightMultiplier * heightCurve.GetMinValue();
+    }
+  }
+
+  public float MaxHeight {
+    get {
+      return terrainUniformScale * heightMultiplier * heightCurve.GetMaxValue();
+    }
+  }
 }

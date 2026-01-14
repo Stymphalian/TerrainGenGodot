@@ -7,5 +7,4 @@
 script = ExtResource("2_qk163")
 MeshHeightMultiplier = 15.0
 HeightCurve = ExtResource("1_0ktm2")
-TerrainUniformScale = 2.0
 metadata/_custom_type_script = "uid://nugq8tdlss4t"

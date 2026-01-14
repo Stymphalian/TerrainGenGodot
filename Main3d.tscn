@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://kl4an827n7xi"]
+[gd_scene load_steps=21 format=4 uid="uid://kl4an827n7xi"]
 
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://bf846f14k57u1" path="res://src/DirectionLight.cs" id="1_tjrhv"]
@@ -10,7 +10,7 @@
 [ext_resource type="Resource" uid="uid://bt7swpfu8mttl" path="res://assets/DefaultTerrain.tres" id="6_usu4c"]
 [ext_resource type="Curve" uid="uid://bcp2lebko8xsn" path="res://assets/FalloffMapCurve.tres" id="6_vlw3j"]
 [ext_resource type="Resource" uid="uid://co5edyae5ucci" path="res://assets/DefaultTexture.tres" id="7_usu4c"]
-[ext_resource type="Material" uid="uid://jppfdq1ow0wl" path="res://assets/DefaultMaterial.tres" id="8_jtuxx"]
+[ext_resource type="Shader" uid="uid://cu37wgmq4kop6" path="res://assets/DefaultShader.gdshader" id="8_jtuxx"]
 [ext_resource type="Script" uid="uid://84dhm8gf7ma8" path="res://src/Player3D.cs" id="9_player"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tjrhv"]
@@ -26,6 +26,15 @@ size = Vector2(100, 100)
 shading_mode = 2
 diffuse_mode = 1
 disable_ambient_light = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_orm1w"]
+render_priority = 0
+shader = ExtResource("8_jtuxx")
+shader_parameter/baseColorCount = 0
+shader_parameter/baseColors = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/baseStartHeights = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/minHeight = 0.0
+shader_parameter/maxHeight = 0.0
 
 [sub_resource type="BoxMesh" id="BoxMesh_cv8oj"]
 
@@ -53,6 +62,7 @@ PlayerPath = NodePath("../Player")
 MoveSpeed = 100.0
 
 [node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
+visible = false
 script = ExtResource("2_kpg5t")
 meshInstance = NodePath("MeshInstance3D")
 showNormals = false
@@ -70,14 +80,13 @@ DrawMode = 1
 NoiseData = ExtResource("6_p00f3")
 TerrainData = ExtResource("6_usu4c")
 TextureData = ExtResource("7_usu4c")
-TerrainMaterial = ExtResource("8_jtuxx")
+TerrainMaterial = SubResource("ShaderMaterial_orm1w")
 
 [node name="FalloffGenerator" type="Node" parent="."]
 script = ExtResource("5_tcwqj")
 curve = ExtResource("6_vlw3j")
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
-process_mode = 4
 script = ExtResource("5_cv8oj")
 
 [node name="Markers" type="Node3D" parent="."]
