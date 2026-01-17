@@ -5,5 +5,5 @@
 [resource]
 script = ExtResource("1_73hfu")
 NoiseFrequency = 0.007500000000000001
-NoiseLacunarity = 3.0000000000000004
+NoiseLacunarity = 4.0
 metadata/_custom_type_script = "uid://d2w02nu3r8krf"

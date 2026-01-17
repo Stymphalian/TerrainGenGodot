@@ -23,6 +23,7 @@ public partial class TerrainData : Resource {
     get => heightCurve;
     set {
       heightCurve = value;
+      heightCurve.Changed += EmitChanged;
       EmitChanged();
     }
   }

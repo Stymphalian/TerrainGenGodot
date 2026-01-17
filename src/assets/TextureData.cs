@@ -1,59 +1,68 @@
+using System.Collections.Generic;
+using System.Linq;
 using Godot;
 
 [GlobalClass]
 public partial class TextureData : Resource {
 
-  private Color[] baseColors = [
-    new Color(0, 0, 0.8f), // Deep Water
-    new Color(0.1f, 0.6f, 0.1f), // Grass
-    new Color(0.55f, 0.4f, 0.25f),
-    new Color(1.0f, 1.0f, 1.0f), // Snow
-  ];
-  private float[] baseStartHeights = [
-    0.3f, // Deep Water
-    0.55f, // Grass
-    0.7f,
-    0.9f, // Snow
-  ];
+  private int textureSize = 512;
+  private Image.Format textureFormat = Image.Format.Rgba8;
+  private TextureLayer[] layers;
 
-  [Export] public Color[] BaseColors {
-    get => baseColors;
+  [Export] public TextureLayer[] Layers {
+    get => layers;
     set {
-      baseColors = value;
+      layers = value;
+      foreach(var layer in layers) {
+        // layer.Changed -= EmitChanged;
+        layer.Changed += EmitChanged;
+      }
       EmitChanged();
     }
   }
-
-  [Export] public float[] BaseStartHeights {
-    get => baseStartHeights;
+  [Export] public int TextureSize {
+    get => textureSize;
     set {
-      baseStartHeights = value;
+      textureSize = value;
       EmitChanged();
     }
   }
-
-  // private TerrainType[] regions = [
-  //   new TerrainType { Name = "Water Deep", Color = new Color(0, 0, 0.75f), Height = 0.3f },
-  //   new TerrainType { Name = "Water Shallow", Color = new Color(0, 0, 0.8f), Height = 0.4f },
-  //   new TerrainType { Name = "Sand", Color = new Color(0.76f, 0.7f, 0.5f), Height = 0.45f },
-  //   new TerrainType { Name = "Grass", Color = new Color(0.1f, 0.6f, 0.1f), Height = 0.55f },
-  //   new TerrainType { Name = "Grass 2", Color = new Color(0.0f, 0.5f, 0.0f), Height = 0.6f },
-  //   new TerrainType { Name = "Rock", Color = new Color(0.55f, 0.4f, 0.25f), Height = 0.7f },
-  //   new TerrainType { Name = "Rock 2", Color = new Color(0.45f, 0.3f, 0.2f), Height = 0.8f },
-  //   new TerrainType { Name = "Snow", Color = new Color(1.0f, 1.0f, 1.0f), Height = 1.0f }
-  // ];
+  [Export] public Image.Format TextureFormat {
+    get => textureFormat;
+    set {
+      textureFormat = value;
+      EmitChanged();
+    }
+  }
 
   public void ApplyToMaterial(Material material) {
     if (material is ShaderMaterial) {
       var shaderMaterial = material as ShaderMaterial;
-      shaderMaterial.SetShaderParameter("baseColorCount", BaseColors.Length);
-      shaderMaterial.SetShaderParameter("baseColors", BaseColors);
-      shaderMaterial.SetShaderParameter("baseStartHeights", BaseStartHeights);  
+      shaderMaterial.SetShaderParameter("layerCount", layers.Length);
+      shaderMaterial.SetShaderParameter("baseColors", layers.Select(x => x.Tint).ToArray());
+      shaderMaterial.SetShaderParameter("baseStartHeights", layers.Select(x => x.StartHeight).ToArray());  
+      shaderMaterial.SetShaderParameter("baseBlends", layers.Select(x => x.BlendStrength).ToArray());
+      shaderMaterial.SetShaderParameter("baseColorStrengths", layers.Select(x => x.TintStrength).ToArray());
+      shaderMaterial.SetShaderParameter("baseTextureScales", layers.Select(x => x.TextureScale).ToArray());
+      
+      Texture2DArray textureArray = GenerateTextureArray(layers.Select(x => x.Texture).ToList());
+      shaderMaterial.SetShaderParameter("baseTextures", textureArray);
     }
-    
-    // material.AlbedoTexture = AlbedoTexture;
-    // material.TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest;
-    // material.TextureRepeat = false;
+  }
+
+  private Texture2DArray GenerateTextureArray(List<Texture2D> textures) {
+    Godot.Collections.Array<Image> images = new Godot.Collections.Array<Image>();
+    for(int i = 0; i < textures.Count; i++) {
+      var image = textures[i].GetImage();
+      image.Resize(textureSize, textureSize);
+      image.Convert(textureFormat);
+      image.GenerateMipmaps();
+      images.Add(image);
+       GD.Print($"Added layer with size {image.GetSize()} and format {image.GetFormat()}");
+    }
+    Texture2DArray textureArray = new Texture2DArray();
+    textureArray.CreateFromImages(images);
+    return textureArray;
   }
 
   public void UpdateMeshHeights(ShaderMaterial material, float minHeight, float maxHeight) {

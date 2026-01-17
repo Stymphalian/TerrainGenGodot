@@ -1,9 +1,71 @@
-[gd_resource type="Resource" script_class="TextureData" load_steps=2 format=3 uid="uid://co5edyae5ucci"]
+[gd_resource type="Resource" script_class="TextureData" load_steps=15 format=3 uid="uid://co5edyae5ucci"]
 
 [ext_resource type="Script" uid="uid://bs42jr8jd03y" path="res://src/assets/TextureData.cs" id="1_g73le"]
+[ext_resource type="Texture2D" uid="uid://tmp6f6apgjdx" path="res://assets/textures/Water.png" id="1_x10ae"]
+[ext_resource type="Script" uid="uid://ch0mqdga8hbud" path="res://src/assets/TextureLayer.cs" id="1_yi1cn"]
+[ext_resource type="Texture2D" uid="uid://d0sf7aweu5wsv" path="res://assets/textures/Sandy grass.png" id="3_1vl71"]
+[ext_resource type="Texture2D" uid="uid://lmguthjbjk0c" path="res://assets/textures/Grass.png" id="4_cy4ap"]
+[ext_resource type="Texture2D" uid="uid://c7wnjpwrila3v" path="res://assets/textures/Rocks 1.png" id="5_n3vgb"]
+[ext_resource type="Texture2D" uid="uid://c8fby8pafjffj" path="res://assets/textures/Rocks 2.png" id="6_v5dg4"]
+[ext_resource type="Texture2D" uid="uid://bisa3dfmevs0j" path="res://assets/textures/Snow.png" id="7_wi3dk"]
+
+[sub_resource type="Resource" id="Resource_tn3ur"]
+script = ExtResource("1_yi1cn")
+Texture = ExtResource("1_x10ae")
+Tint = Color(0.22725505, 0.45128733, 1, 1)
+TintStrength = 0.75
+TextureScale = 10.0
+metadata/_custom_type_script = "uid://ch0mqdga8hbud"
+
+[sub_resource type="Resource" id="Resource_xywrw"]
+script = ExtResource("1_yi1cn")
+Texture = ExtResource("3_1vl71")
+Tint = Color(0.82744557, 0.67998725, 0.16754353, 1)
+TintStrength = 0.4
+StartHeight = 0.01
+TextureScale = 5.0
+metadata/_custom_type_script = "uid://ch0mqdga8hbud"
+
+[sub_resource type="Resource" id="Resource_6tbkv"]
+script = ExtResource("1_yi1cn")
+Texture = ExtResource("4_cy4ap")
+Tint = Color(0.08759088, 0.4466982, 0.1427874, 1)
+TintStrength = 0.6
+StartHeight = 0.03
+BlendStrength = 0.03
+TextureScale = 7.75
+metadata/_custom_type_script = "uid://ch0mqdga8hbud"
+
+[sub_resource type="Resource" id="Resource_ayd5w"]
+script = ExtResource("1_yi1cn")
+Texture = ExtResource("5_n3vgb")
+Tint = Color(0.46134478, 0.2781983, 0, 1)
+TintStrength = 0.5
+StartHeight = 0.225
+BlendStrength = 0.095
+TextureScale = 15.0
+metadata/_custom_type_script = "uid://ch0mqdga8hbud"
+
+[sub_resource type="Resource" id="Resource_f8bg0"]
+script = ExtResource("1_yi1cn")
+Texture = ExtResource("6_v5dg4")
+Tint = Color(0.16825426, 0.18620852, 0.1662991, 1)
+TintStrength = 0.9
+StartHeight = 0.431
+BlendStrength = 0.215
+TextureScale = 10.0
+metadata/_custom_type_script = "uid://ch0mqdga8hbud"
+
+[sub_resource type="Resource" id="Resource_x10ae"]
+script = ExtResource("1_yi1cn")
+Texture = ExtResource("7_wi3dk")
+Tint = Color(0.97, 0.97, 0.97, 1)
+StartHeight = 0.8
+BlendStrength = 0.115
+TextureScale = 20.0
+metadata/_custom_type_script = "uid://ch0mqdga8hbud"
 
 [resource]
 script = ExtResource("1_g73le")
-BaseColors = PackedColorArray(0.17860729, 0.4101245, 1, 1, 0.1, 0.6, 0.1, 1, 0.55, 0.4, 0.25, 1, 1, 1, 1, 1)
-BaseStartHeights = PackedFloat32Array(0, 0.2, 0.55, 0.7)
+Layers = Array[Object]([SubResource("Resource_tn3ur"), SubResource("Resource_xywrw"), SubResource("Resource_6tbkv"), SubResource("Resource_ayd5w"), SubResource("Resource_f8bg0"), SubResource("Resource_x10ae")])
 metadata/_custom_type_script = "uid://bs42jr8jd03y"

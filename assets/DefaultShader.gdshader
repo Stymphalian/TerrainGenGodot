@@ -3,12 +3,23 @@
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
 
-const int MAX_BASE_COLORS_COUNT = 8;
-uniform int baseColorCount;
-uniform vec4 baseColors[MAX_BASE_COLORS_COUNT];
-uniform float baseStartHeights[MAX_BASE_COLORS_COUNT];
+const int MAX_LAYER_COUNT = 8;
+const float EPSILON = 0.0001;
+
+uniform int layerCount;
+uniform vec4 baseColors[MAX_LAYER_COUNT];
+uniform float baseStartHeights[MAX_LAYER_COUNT];
+uniform float baseBlends[MAX_LAYER_COUNT];
+uniform float baseColorStrengths[MAX_LAYER_COUNT];
+uniform float baseTextureScales[MAX_LAYER_COUNT];
+uniform sampler2DArray baseTextures: hint_default_white, filter_linear_mipmap, repeat_enable;
+
 uniform float minHeight;
 uniform float maxHeight;
+
+uniform sampler2D test_texture : hint_default_white, filter_linear_mipmap, repeat_enable;
+uniform float test_scale = 1.0;
+
 // uniform vec4 albedo : source_color;
 // uniform sampler2D texture_albedo : source_color, filter_linear_mipmap, repeat_enable;
 // uniform ivec2 albedo_texture_size;
@@ -28,25 +39,40 @@ uniform float maxHeight;
 // uniform vec3 uv2_offset;
 
 varying vec3 local_position;
+varying vec3 local_normal;
 varying vec4 world_position;
+varying vec3 world_normal;
 
 void vertex() {
   local_position = VERTEX;
+  local_normal = NORMAL;
   world_position = MODEL_MATRIX * vec4(VERTEX, 1.0);
+  world_normal = MODEL_NORMAL_MATRIX * NORMAL;
 	// UV = UV * uv1_scale.xy + uv1_offset.xy;
 }
 
 float inverseLerp(float a, float b, float value) {
+  if (a == b) {
+    return 0.0;
+  }
   return clamp((value - a) / (b - a), 0.0, 1.0);
 }
 
 int findColorIndex(float height) {
-  for(int index = baseColorCount - 1; index >= 0; index--) {
+  for(int index = layerCount - 1; index >= 0; index--) {
     if (height >= baseStartHeights[index]) {
       return index;
     }
   }
   return 0;
+}
+
+vec3 triplanarTextureColor(int index, vec3 worldPos, vec3 blendAxes, float scale) {
+  vec3 p = worldPos.xyz / scale;
+  vec3 xProjection = texture(baseTextures, vec3(p.y, p.z, float(index))).rgb * blendAxes.x;
+  vec3 yProjection = texture(baseTextures, vec3(p.x, p.z, float(index))).rgb * blendAxes.y;
+  vec3 zProjection = texture(baseTextures, vec3(p.x, p.y, float(index))).rgb * blendAxes.z;
+  return xProjection + yProjection + zProjection;
 }
 
 void fragment() {
@@ -57,27 +83,23 @@ void fragment() {
     ALBEDO = vec3(0.0, 1.0, 0.0);
   } else {
     float heightPercent = inverseLerp(minHeight, maxHeight, world_position.y);
-    for(int index = 0; index < baseColorCount; index++) {
-      float drawStrength = clamp(sign(heightPercent - baseStartHeights[index]), 0, 1);
-      ALBEDO = ALBEDO * (1.0 - drawStrength) + baseColors[index].rgb * drawStrength;
+    vec3 blendAxes = abs(world_normal);
+    blendAxes /= (blendAxes.x + blendAxes.y + blendAxes.z);
+
+    for(int index = 0; index < layerCount; index++) {
+      // float drawStrength = clamp(sign(heightPercent - baseStartHeights[index]), 0, 1);
+      float drawStrength = inverseLerp(
+        -baseBlends[index]/2.0 - EPSILON, 
+        baseBlends[index]/2.0,
+        heightPercent - baseStartHeights[index]
+      );
+      vec3 baseColor = baseColors[index].rgb * baseColorStrengths[index];
+      vec3 textureColor = triplanarTextureColor(index, world_position.xyz, blendAxes, baseTextureScales[index]);
+      textureColor *= (1.0 - baseColorStrengths[index]);
+
+      ALBEDO = ALBEDO * (1.0 - drawStrength) + (baseColor + textureColor) * drawStrength;
+      
     }
-    // int colorIndex = findColorIndex(heightPercent);
-    // ALBEDO = baseColors[colorIndex].rgb;
   }
-  
-  
 
-  // ALBEDO = vec3(0.0, 1.0, 0.0);
-	// vec2 base_uv = UV;
-
-	// vec4 albedo_tex = texture(texture_albedo, base_uv);
-	// ALBEDO = albedo.rgb * albedo_tex.rgb;
-
-	// float metallic_tex = dot(texture(texture_metallic, base_uv), metallic_texture_channel);
-	// METALLIC = metallic_tex * metallic;
-	// SPECULAR = specular;
-
-	// vec4 roughness_texture_channel = vec4(1.0, 0.0, 0.0, 0.0);
-	// float roughness_tex = dot(texture(texture_roughness, base_uv), roughness_texture_channel);
-	// ROUGHNESS = roughness_tex * roughness;
 }
