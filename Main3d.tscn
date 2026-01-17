@@ -68,6 +68,7 @@ PlayerPath = NodePath("../Player")
 MoveSpeed = 100.0
 
 [node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
+visible = false
 script = ExtResource("2_kpg5t")
 meshInstance = NodePath("MeshInstance3D")
 showNormals = false
@@ -92,7 +93,6 @@ script = ExtResource("5_tcwqj")
 curve = ExtResource("6_vlw3j")
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
-process_mode = 4
 script = ExtResource("5_cv8oj")
 
 [node name="Markers" type="Node3D" parent="."]
