@@ -1,6 +1,3 @@
-using System;
-using System.Globalization;
-using System.Threading;
 using Godot;
 
 
@@ -9,17 +6,19 @@ public partial class TerrainChunk {
   public StaticBody3D CollisionObject;
   public CollisionShape3D CollisionShape;
   public Rect2 Bounds;
-  public Vector2 Position;
+  public Vector2 ChunkPosition;
   public int ChunkSize;
   private MapData mapData;
-  // private StandardMaterial3D material;
+  private StandardMaterial3D material;
   private bool hasReceivedMapData = false;
   private MapGenerator mapGeneratorRef;
   private LevelOfDetailSetting[] lodSettings;
   private LODMesh[] lodInfos;
-  private LODMesh collisionLODMesh;
+  // private LODMesh collisionLODMesh;
   private int previousLODIndex = -1;
   private Vector2 chunkPosition;
+  private int colliderLODMeshIndex;
+  private bool hasCollisionMesh;
 
   public bool isDirty = true;
 
@@ -29,11 +28,13 @@ public partial class TerrainChunk {
     Vector2 chunkPosition,
     int chunkSize,
     LevelOfDetailSetting[] lodSettings,
+    int colliderLODMeshIndex,
     float terrainChunkScale
     ) {
     mapGeneratorRef = mapGenRef;
     this.lodSettings = lodSettings;
     this.chunkPosition = chunkPosition;
+    this.colliderLODMeshIndex = colliderLODMeshIndex;
     Mesh = new MeshInstance3D();
     Mesh.Name = $"TerrainChunk at {chunkCoords} {chunkPosition}";
     Mesh.Mesh = new PlaneMesh();
@@ -49,15 +50,13 @@ public partial class TerrainChunk {
     CollisionObject.AddChild(CollisionShape);
 
     Bounds = new Rect2(chunkPosition, new Vector2(chunkSize, chunkSize));
-    Position = chunkPosition;
+    ChunkPosition = chunkPosition;
     ChunkSize = chunkSize;
 
     lodInfos = new LODMesh[lodSettings.Length];
     for (int i = 0; i < lodSettings.Length; i++) {
-      lodInfos[i] = new LODMesh(lodSettings[i].lod, OnLODMeshReceived);
-      if (lodSettings[i].useForCollision) {
-        collisionLODMesh = lodInfos[i];
-      }
+      lodInfos[i] = new LODMesh(lodSettings[i].lod);
+      lodInfos[i].UpdateCallback += OnLODMeshReceived;
     }
 
     mapGeneratorRef.RequestMapData(chunkPosition, OnMapDataReceived);
@@ -72,6 +71,7 @@ public partial class TerrainChunk {
     GD.Print("Map data received in EndlessTerrain");
     this.mapData = mapData;
     this.hasReceivedMapData = true;
+    this.hasCollisionMesh = false;
 
     // Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
     // Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
@@ -80,7 +80,7 @@ public partial class TerrainChunk {
     //   TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
     //   TextureRepeat = false,
     //   ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
-    //   // AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
+    //   AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
     // };
     // Mesh.SetSurfaceOverrideMaterial(0, material);
 
@@ -105,10 +105,12 @@ public partial class TerrainChunk {
     CollisionShape.Scale = Vector3.One * terrainChunkScale;
   }
 
-  public void UpdateChunk(Vector3 playerPosition, float maxViewDist) {
+
+  public void UpdateTerrainChunk(Vector3 playerPosition, float maxViewDist) {
     if (!hasReceivedMapData) {
       return;
     }
+    bool wasVisible = IsChunkVisible();
     Vector2 playerPos = new Vector2(playerPosition.X, playerPosition.Z);
 
     // Calculate distance to closest point on bounds
@@ -130,32 +132,55 @@ public partial class TerrainChunk {
           previousLODIndex = lodIndex;
           Mesh.Mesh = lodInfos[lodIndex].Mesh;
           // CollisionShape.Shape = lodInfos[lodIndex].Mesh.CreateTrimeshShape();
-          // UpdateMaterialColor(lodIndex);
+          UpdateMaterialColor(lodIndex);
         } else if (!lodInfos[lodIndex].HasRequestedMesh) {
           lodInfos[lodIndex].RequestMesh(mapGeneratorRef, mapData);
         }
       }
+    }
 
-      // Load the collision shape mesh if needed
-      if (lodIndex == 0) {
-        if (collisionLODMesh.HasReceivedMesh && CollisionShape.Shape == null) {
-          GD.Print("Updating collision mesh ");
-          CollisionShape.Shape = collisionLODMesh.Mesh.CreateTrimeshShape();
-        } else if (collisionLODMesh.HasRequestedMesh == false) {
-          GD.Print("Requesting collision LOD mesh ");
-          // CollisionShape.Shape = lodInfos[lodIndex].Mesh.CreateTrimeshShape();
-          collisionLODMesh.RequestMesh(mapGeneratorRef, mapData);
-        }
+    if (wasVisible != visible) {
+      if (visible) {
+        
+      } else {
+        
       }
     }
   }
 
-  public bool SetVisible(bool isVisible) {
+  public void UpdateCollisionMesh(Vector3 playerPosition, float collisionCheckDistance) {
+    if (hasCollisionMesh) {
+      return;
+    }
+
+    Vector2 playerPos = new Vector2(playerPosition.X, playerPosition.Z);
+    Vector2 closestPoint = new Vector2(
+      Mathf.Clamp(playerPos.X, Bounds.Position.X, Bounds.Position.X + Bounds.Size.X),
+      Mathf.Clamp(playerPos.Y, Bounds.Position.Y, Bounds.Position.Y + Bounds.Size.Y)
+    );
+    float distanceToBounds = (closestPoint - playerPos).Length();
+    if (distanceToBounds > collisionCheckDistance) {
+      return;
+    }
+
+    var collisionLODMesh = lodInfos[colliderLODMeshIndex];
+    if (collisionLODMesh.HasReceivedMesh && CollisionShape.Shape == null) {
+      GD.Print("Updating collision mesh ");
+      CollisionShape.Shape = collisionLODMesh.Mesh.CreateTrimeshShape();
+      hasCollisionMesh = true;
+    } else if (collisionLODMesh.HasRequestedMesh == false) {
+      GD.Print("Requesting collision LOD mesh ");
+      // CollisionShape.Shape = lodInfos[lodIndex].Mesh.CreateTrimeshShape();
+      collisionLODMesh.RequestMesh(mapGeneratorRef, mapData);
+    }
+  }
+
+  public bool SetChunkVisible(bool isVisible) {
     Mesh.Visible = isVisible;
     return isVisible;
   }
 
-  public bool IsVisible() {
+  public bool IsChunkVisible() {
     return Mesh.Visible;
   }
 
@@ -174,11 +199,11 @@ public partial class TerrainChunk {
     public bool HasReceivedMesh = false;
     // public MeshData meshData;
     public ArrayMesh Mesh;
-    private System.Action updateCallback;
+    public event System.Action UpdateCallback;
 
-    public LODMesh(int LOD, System.Action updateCallback) {
+    public LODMesh(int LOD) {
       this.LOD = LOD;
-      this.updateCallback = updateCallback;
+      // this.updateCallback = updateCallback;
     }
 
     public void RequestMesh(MapGenerator mapGeneratorRef, MapData mapData) {
@@ -191,7 +216,7 @@ public partial class TerrainChunk {
       GD.Print($"Mesh data received for LOD {LOD}");
       HasReceivedMesh = true;
       Mesh = meshData.CreateMesh();
-      updateCallback();
+      UpdateCallback();
     }
   }
 }

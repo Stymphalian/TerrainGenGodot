@@ -2,7 +2,7 @@ using Godot;
 
 [GlobalClass]
 public partial class LevelOfDetailSetting : Resource {
-  [Export] public int lod;
+  [Export(PropertyHint.Range, $"0,4")] public int lod;
   [Export] public int distanceThreshold;
-  [Export] public bool useForCollision = false;
+  public bool useForCollision = false;
 }

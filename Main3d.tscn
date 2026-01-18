@@ -60,12 +60,11 @@ transform = Transform3D(20, 0, 0, 0, 20, 0, 0, 0, 20, 0, 0, 0)
 mesh = SubResource("SphereMesh_6rk8u")
 
 [node name="MainCamera" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 120, 20, -20)
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1500, 0)
 current = true
 script = ExtResource("1_6t2qg")
-Mode = 0
 PlayerPath = NodePath("../Player")
-MoveSpeed = 100.0
+MoveSpeed = 500.0
 
 [node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
 visible = false
@@ -80,6 +79,7 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 
 [node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("display")]
 script = ExtResource("3_ly0ex")
+ChunkSizeIndex = 3
 display = NodePath("../MapDisplay")
 RegenerateMapButton = true
 DrawMode = 1
@@ -94,6 +94,7 @@ curve = ExtResource("6_vlw3j")
 
 [node name="EndlessTerrain" type="Node3D" parent="."]
 script = ExtResource("5_cv8oj")
+colliderGenerationDistanceThreshold = 25.0
 
 [node name="Markers" type="Node3D" parent="."]
 visible = false
@@ -126,7 +127,8 @@ skeleton = NodePath("../..")
 [node name="Player" type="CharacterBody3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 100, 0)
 script = ExtResource("9_player")
-MoveSpeed = 20.0
+MoveSpeed = 50.0
+JumpVelocity = 25.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Player"]
 shape = SubResource("CapsuleShape3D_player")

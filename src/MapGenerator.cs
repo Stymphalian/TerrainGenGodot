@@ -26,25 +26,23 @@ public partial class MapGenerator : Node {
   };
 
   // public const int mapChunkSize = 241;
-  public const int mapChunkSize = 239;
+  public int chunkSizeIndex;
+  [Export] int ChunkSizeIndex {
+    get => chunkSizeIndex;
+    set {
+      chunkSizeIndex = Math.Clamp(value, 0, MeshGenerator.supportedChunkSizes.Length - 1);
+      falloffMap = null;
+      DrawMapInEditor();
+    }
+  }
+  // public int mapChunkSize = 239;
+
   private int levelOfDetail = 0;
   private NoiseData noiseData;
   private TerrainData terrainData;
   private TextureData textureData;
   private Material terrainMaterial;
-
   private DRAW_MODE drawMode = DRAW_MODE.NOISE_MAP;
-
-  private TerrainType[] regions = [
-    new TerrainType { Name = "Water Deep", Color = new Color(0, 0, 0.75f), Height = 0.3f },
-    new TerrainType { Name = "Water Shallow", Color = new Color(0, 0, 0.8f), Height = 0.4f },
-    new TerrainType { Name = "Sand", Color = new Color(0.76f, 0.7f, 0.5f), Height = 0.45f },
-    new TerrainType { Name = "Grass", Color = new Color(0.1f, 0.6f, 0.1f), Height = 0.55f },
-    new TerrainType { Name = "Grass 2", Color = new Color(0.0f, 0.5f, 0.0f), Height = 0.6f },
-    new TerrainType { Name = "Rock", Color = new Color(0.55f, 0.4f, 0.25f), Height = 0.7f },
-    new TerrainType { Name = "Rock 2", Color = new Color(0.45f, 0.3f, 0.2f), Height = 0.8f },
-    new TerrainType { Name = "Snow", Color = new Color(1.0f, 1.0f, 1.0f), Height = 1.0f }
-  ];
   private float[,] falloffMap;
 
   [Export] public MapDisplay display { get; set; }
@@ -73,11 +71,11 @@ public partial class MapGenerator : Node {
     }
   }
 
-  [Export(PropertyHint.Range, "0,6")]
+  [Export]
   public int LevelOfDetail {
     get => levelOfDetail;
     set {
-      levelOfDetail = value;
+      levelOfDetail = Math.Clamp(value, 0, MeshGenerator.numSupportedLODs - 1);
       DrawMapInEditor();
     }
   }
@@ -128,14 +126,9 @@ public partial class MapGenerator : Node {
     }
   }
 
-  // [Export]
-  // public TerrainType[] Regions {
-  //   get => regions;
-  //   set {
-  //     regions = value;
-  //     DrawMapInEditor();
-  //   }
-  // }
+  public int mapChunkSize {
+    get => MeshGenerator.supportedChunkSizes[chunkSizeIndex];
+  }
 
   public float[,] FalloffMap {
     get {
@@ -195,46 +188,28 @@ public partial class MapGenerator : Node {
     meshDataThread.Start();
   }
 
-  public Color[,] GetColorMapFromHeightMap(float[,] heightMap) {
-    int width = heightMap.GetLength(0);
-    int height = heightMap.GetLength(1);
-    Color[,] colorMap = new Color[width, height];
-    for (int y = 0; y < height; y++) {
-      for (int x = 0; x < width; x++) {
-        float currentHeight = heightMap[x, y];
-        foreach (var region in regions) {
-          if (currentHeight <= region.Height) {
-            colorMap[x, y] = region.Color;
-            break;
-          }
-        }
-      }
-    }
-    return colorMap;
-  }
-
   public MapData GenerateMapData(Vector2 topLeft) {
     FastNoiseLite noise = NoiseGenerator.CreateCustom(
       noiseData.noiseSeed, noiseData.noiseFrequency, noiseData.noiseOctaves,
       noiseData.noiseLacunarity, noiseData.noisePersistence
     );
 
-    int borderChunkSize = mapChunkSize + 2;
     float[,] noiseMap = NoiseGenerator.GenerateNoiseMap(
       noise,
-      borderChunkSize,
-      borderChunkSize,
+      mapChunkSize + 2,
+      mapChunkSize + 2,
       noiseData.noiseScale,
       topLeft + noiseData.noiseOffset);
+
     if (terrainData.UseFalloffMap) {
-      var localFalloffMap = FalloffMap;
-      for (int y = 0; y < borderChunkSize; y++) {
-        for (int x = 0; x < borderChunkSize; x++) {
-          noiseMap[x, y] = Mathf.Clamp(noiseMap[x, y] - localFalloffMap[x, y], 0, 1);
+      Debug.Assert(FalloffMap.GetLength(0) == noiseMap.GetLength(0), "Falloff map width does not match noise map width");
+      Debug.Assert(FalloffMap.GetLength(1) == noiseMap.GetLength(1), "Falloff map height does not match noise map height");
+      for (int y = 0; y < noiseMap.GetLength(1); y++) {
+        for (int x = 0; x < noiseMap.GetLength(0); x++) {
+          noiseMap[x, y] = Mathf.Clamp(noiseMap[x, y] - FalloffMap[x, y], 0, 1);
         }
       }
     }
-    // Color[,] colorMap = GetColorMapFromHeightMap(noiseMap);
 
     textureData.UpdateMeshHeights(
       (ShaderMaterial)terrainMaterial,
@@ -253,10 +228,6 @@ public partial class MapGenerator : Node {
     }
     MapData mapData = GenerateMapData(Vector2.Zero);
 
-    // if (drawMode == DRAW_MODE.COLOR_MAP) {
-    //   Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
-    //   display.DrawTexture(texture);
-    // } else 
     if (drawMode == DRAW_MODE.NOISE_MAP) {
       Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
       display.DrawTexture(texture);
@@ -267,18 +238,11 @@ public partial class MapGenerator : Node {
         terrainData.HeightCurve,
         levelOfDetail,
         terrainData.UseFlatShading);
-      // Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
       display.DrawMesh(meshData);
     } else if (drawMode == DRAW_MODE.FALLOFF_MAP) {
-      float[,] falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize);
-      Texture2D texture = TextureGenerator.TextureFromHeightMap(falloffMap);
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(FalloffMap);
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.NORMAL_MAP) {
-      // MeshData meshData = MeshGenerator.GenerateSphereMesh(10.0f, 64, 64);
-      // MeshData meshData = MeshGenerator.GenerateSphereMesh(mapData.HeightMap, 64, 64);
-      // Texture2D texture = TextureGenerator.TextureFromColorMap(mapData.ColorMap);
-      // display.DrawMesh(meshData, texture);
-
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
         mapData.HeightMap,
         terrainData.MeshHeightMultiplier,
@@ -286,10 +250,10 @@ public partial class MapGenerator : Node {
         levelOfDetail,
         terrainData.UseFlatShading);
 
-      Color[,] normalColorMap = new Color[mapChunkSize, mapChunkSize];
-      for (int y = 0; y < mapChunkSize; y++) {
-        for (int x = 0; x < mapChunkSize; x++) {
-          Vector3 normal = meshData.Normals[x + y * mapChunkSize];
+      Color[,] normalColorMap = new Color[meshData.meshLength, meshData.meshLength];
+      for (int y = 0; y < meshData.meshLength; y++) {
+        for (int x = 0; x < meshData.meshLength; x++) {
+          Vector3 normal = meshData.Normals[x + y * meshData.meshLength];
           normalColorMap[x, y] = new Color(
             (normal.X + 1.0f) / 2.0f,
             (normal.Y + 1.0f) / 2.0f,
@@ -297,8 +261,8 @@ public partial class MapGenerator : Node {
           );
         }
       }
-      // Texture2D texture = TextureGenerator.TextureFromColorMap(normalColorMap);
-      display.DrawMesh(meshData);
+      Texture2D texture = TextureGenerator.TextureFromColorMap(normalColorMap);
+      display.DrawTexture(texture);
     }
   }
 }

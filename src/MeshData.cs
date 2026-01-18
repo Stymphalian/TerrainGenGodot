@@ -7,16 +7,18 @@ public class MeshData {
   public Vector3[] Normals;
   public Vector2[] UVs;
   public int[] Triangles;
-  private int triangleIndex = 0;
-
   public Vector3[] BorderVertices;
   public int[] BorderTriangles;
-  private int borderTriangleIndex = 0;
+  public int meshLength;
 
+  private int triangleIndex = 0;
+  private int borderTriangleIndex = 0;
   private bool useFlatShading = false;
 
   public MeshData(int meshLength, bool useFlatShading) {
     this.useFlatShading = useFlatShading;
+    this.meshLength = meshLength;
+
     Vertices = new Vector3[meshLength * meshLength];
     Normals = new Vector3[Vertices.Length];
     UVs = new Vector2[meshLength * meshLength];

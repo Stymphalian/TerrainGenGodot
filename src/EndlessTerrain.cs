@@ -3,18 +3,19 @@ using System.Collections.Generic;
 using System.Linq;
 
 public partial class EndlessTerrain : Node3D {
-  // [Export] public int maxViewDist = 500;
-  // [Export] public float TerrainChunkScale = 1.0f;
+  [Export] public  int ColliderLODMeshIndex = 1;
   [Export]
   public LevelOfDetailSetting[] detailLevels = [
     new LevelOfDetailSetting { lod = 0, distanceThreshold = 100 },
-    new LevelOfDetailSetting { lod = 1, distanceThreshold = 250 , useForCollision = true},
+    new LevelOfDetailSetting { lod = 1, distanceThreshold = 250 },
     new LevelOfDetailSetting { lod = 4, distanceThreshold = 400 },
     // new LevelOfDetailSetting { lod = 4, distanceThreshold = 1600 },
   ];
   [Export] public float playerMoveThresholdForChunkUpdate = 25.0f;
-  private int chunkSize = MapGenerator.mapChunkSize - 1;
-  private int halfChunkSize = (MapGenerator.mapChunkSize - 1) / 2;
+  [Export] public float colliderGenerationDistanceThreshold = 5.0f;
+
+  private int chunkSize = 0;
+  private int halfChunkSize = 0;
   private int chunksVisibleInViewDistance = 1;
   private Vector3 playerPosition;
   private Vector3 previousPlayerPosition;
@@ -42,13 +43,17 @@ public partial class EndlessTerrain : Node3D {
         chunk => chunk.UpdateTerrainChunkScale(TerrainChunkScale)
       );
     };
+    // Minus-1 because chunksSize is odd and we want equal halfChunkSizes to be equal so we can center the chunks
+    chunkSize = mapGeneratorRef.mapChunkSize - 1;
+    halfChunkSize = (mapGeneratorRef.mapChunkSize - 1) / 2;
+    // detailLevels[ColliderMeshIndex].useForCollision = true;
   }
 
   // Called when the node enters the scene tree for the first time.
   public override void _Ready() {
     base._Ready();
     GD.Print("EndlessTerrain ready");
-    chunkSize = MapGenerator.mapChunkSize - 1;
+    // chunkSize = MapGenerator.mapChunkSize - 1;
     chunksVisibleInViewDistance = Mathf.CeilToInt((float)maxViewDist / chunkSize);
     playerPosition = GetViewport().GetCamera3D().Position / TerrainChunkScale;
     previousPlayerPosition = playerPosition;
@@ -60,6 +65,13 @@ public partial class EndlessTerrain : Node3D {
     base._Process(delta);
     playerPosition = GetViewport().GetCamera3D().Position / TerrainChunkScale;
     Position = GetViewport().GetCamera3D().Position;
+
+    if (playerPosition != previousPlayerPosition) {
+      foreach (var coord in visibleTerrainChunks) {
+        TerrainChunk chunk = terrainChunkDictionary[coord];
+        chunk.UpdateCollisionMesh(playerPosition, colliderGenerationDistanceThreshold);
+      }
+    }
 
     bool terrainChunksDirty = terrainChunkDictionary.Values.Any(chunk => chunk.isDirty);
     if (firstProcess || terrainChunksDirty || (playerPosition - previousPlayerPosition).Length() > playerMoveThresholdForChunkUpdate) {
@@ -78,7 +90,7 @@ public partial class EndlessTerrain : Node3D {
 
     // Hide previously visible chunks
     foreach (var coord in visibleTerrainChunks) {
-      terrainChunkDictionary[coord].SetVisible(false);
+      terrainChunkDictionary[coord].SetChunkVisible(false);
     }
     visibleTerrainChunks.Clear();
 
@@ -99,6 +111,7 @@ public partial class EndlessTerrain : Node3D {
             ),
             chunkSize,
             detailLevels,
+            ColliderLODMeshIndex,
             TerrainChunkScale
           );
           terrainChunkDictionary.Add(viewedChunkCoord, newChunk);
@@ -109,8 +122,8 @@ public partial class EndlessTerrain : Node3D {
         }
 
         var chunk = terrainChunkDictionary[viewedChunkCoord];
-        chunk.UpdateChunk(playerPosition, maxViewDist);
-        if (chunk.IsVisible()) {
+        chunk.UpdateTerrainChunk(playerPosition, maxViewDist);
+        if (chunk.IsChunkVisible()) {
           visibleTerrainChunks.Add(viewedChunkCoord);
         }
       }

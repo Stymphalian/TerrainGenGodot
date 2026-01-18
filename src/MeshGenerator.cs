@@ -1,11 +1,21 @@
 using Godot;
 
 public static class MeshGenerator {
+
+  public const int numSupportedLODs = 5;
+  public const int numSupportedChunkSizes = 9;
+  public static readonly int[] supportedChunkSizes = {47, 71, 95, 119, 143, 167, 191, 215, 239};
+
   // Generate the terrain mesh from the height map. Starting from 0,0 as the top-left corner
   // and extending to width,height as the bottom-right corner.
   // This is to match the TerrainChunk generation.
   public static MeshData GenerateTerrainMesh(
-    float[,] heightMap, float heightMultiplier, Curve heightCurve, int levelOfDetail, bool useFlatShading) {
+    float[,] heightMap,
+    float heightMultiplier,
+    Curve heightCurve,
+    int levelOfDetail,
+    bool useFlatShading) {
+
     int meshLODIncr = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
     int borderLength = heightMap.GetLength(0);
     int meshLength = borderLength - 2 * meshLODIncr;
@@ -55,70 +65,6 @@ public static class MeshGenerator {
     meshData.FinishMesh();
 
     // Return or use the generated mesh as needed
-    return meshData;
-  }
-
-  // Generate a UV sphere mesh with specified radius and resolution, optionally using a heightMap for displacement
-  public static MeshData GenerateSphereMesh(float[,] heightMap = null, float baseRadius = 1.0f, float heightMultiplier = 1.0f, int latitudeSegments = 32, int longitudeSegments = 32) {
-    int vertexCount = (latitudeSegments + 1) * (longitudeSegments + 1);
-    MeshData meshData = new MeshData(longitudeSegments + 1, false);
-
-    int vertexIndex = 0;
-
-    int heightMapWidth = heightMap?.GetLength(0) ?? 1;
-    int heightMapHeight = heightMap?.GetLength(1) ?? 1;
-
-    // Generate vertices
-    for (int lat = 0; lat <= latitudeSegments; lat++) {
-      float theta = lat * Mathf.Pi / latitudeSegments; // 0 to PI
-      float sinTheta = Mathf.Sin(theta);
-      float cosTheta = Mathf.Cos(theta);
-
-      for (int lon = 0; lon <= longitudeSegments; lon++) {
-        float phi = lon * 2.0f * Mathf.Pi / longitudeSegments; // 0 to 2PI
-        float sinPhi = Mathf.Sin(phi);
-        float cosPhi = Mathf.Cos(phi);
-
-        // Spherical to Cartesian coordinates
-        float x = cosPhi * sinTheta;
-        float y = cosTheta;
-        float z = sinPhi * sinTheta;
-
-        Vector3 direction = new Vector3(x, y, z); // Direction from center
-
-        // Sample heightMap if provided
-        float radiusAtPoint = baseRadius;
-        if (heightMap != null) {
-          float u = (float)lon / longitudeSegments;
-          float v = (float)lat / latitudeSegments;
-
-          int heightX = Mathf.Clamp((int)(u * (heightMapWidth - 1)), 0, heightMapWidth - 1);
-          int heightY = Mathf.Clamp((int)(v * (heightMapHeight - 1)), 0, heightMapHeight - 1);
-
-          float heightValue = heightMap[heightX, heightY];
-          radiusAtPoint = baseRadius + (heightValue * heightMultiplier);
-        }
-
-        meshData.Vertices[vertexIndex] = direction * radiusAtPoint;
-        meshData.Normals[vertexIndex] = direction; // Will be recalculated properly later
-        meshData.UVs[vertexIndex] = new Vector2((float)lon / longitudeSegments, (float)lat / latitudeSegments);
-
-        // Generate triangles (skip last row and column for triangle generation)
-        if (lat < latitudeSegments && lon < longitudeSegments) {
-          int current = lat * (longitudeSegments + 1) + lon;
-          int next = current + longitudeSegments + 1;
-
-          // First triangle (clockwise winding)
-          meshData.AddTriangle(current, next, current + 1);
-          // Second triangle (clockwise winding)
-          meshData.AddTriangle(current + 1, next, next + 1);
-        }
-
-        vertexIndex++;
-      }
-    }
-
-    meshData.FinishMesh();
     return meshData;
   }
 }
