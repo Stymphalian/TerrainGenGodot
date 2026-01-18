@@ -5,9 +5,9 @@
 [ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
 [ext_resource type="Script" uid="uid://qxctxw6a5sho" path="res://src/MapGenerator.cs" id="3_ly0ex"]
 [ext_resource type="Script" uid="uid://ca43crxfb1h0b" path="res://src/EndlessTerrain.cs" id="5_cv8oj"]
+[ext_resource type="Resource" uid="uid://c6s8qvhgfo6mq" path="res://assets/DefaultHeightMapSettings.tres" id="5_orm1w"]
 [ext_resource type="Script" uid="uid://bbmkca2kj0hyp" path="res://src/FalloffGenerator.cs" id="5_tcwqj"]
-[ext_resource type="Resource" uid="uid://d0tjcbjbg30hx" path="res://assets/DefaultNoise.tres" id="6_p00f3"]
-[ext_resource type="Resource" uid="uid://bt7swpfu8mttl" path="res://assets/DefaultTerrain.tres" id="6_usu4c"]
+[ext_resource type="Resource" uid="uid://bt7swpfu8mttl" path="res://assets/DefaultMeshSetings.tres" id="6_orm1w"]
 [ext_resource type="Curve" uid="uid://bcp2lebko8xsn" path="res://assets/FalloffMapCurve.tres" id="6_vlw3j"]
 [ext_resource type="Resource" uid="uid://co5edyae5ucci" path="res://assets/DefaultTexture.tres" id="7_usu4c"]
 [ext_resource type="Shader" uid="uid://cu37wgmq4kop6" path="res://assets/DefaultShader.gdshader" id="8_jtuxx"]
@@ -79,12 +79,11 @@ surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
 
 [node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("display")]
 script = ExtResource("3_ly0ex")
-ChunkSizeIndex = 3
 display = NodePath("../MapDisplay")
 RegenerateMapButton = true
 DrawMode = 1
-NoiseData = ExtResource("6_p00f3")
-TerrainData = ExtResource("6_usu4c")
+HeightMapSettings = ExtResource("5_orm1w")
+MeshSettings = ExtResource("6_orm1w")
 TextureData = ExtResource("7_usu4c")
 TerrainMaterial = SubResource("ShaderMaterial_orm1w")
 

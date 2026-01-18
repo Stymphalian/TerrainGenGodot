@@ -35,7 +35,11 @@ public partial class MapDisplay : Node3D {
 
     MapGenerator mapGeneratorRef =  GetNode<MapGenerator>("/root/Root/MapGenerator");
     meshInstance.Mesh = meshData.CreateMesh();
-    meshInstance.Scale = Vector3.One * mapGeneratorRef.TerrainData.TerrainUniformScale;
+    meshInstance.Scale = new Vector3(
+      mapGeneratorRef.MeshSettings.MeshScale,
+      1.0f,
+      mapGeneratorRef.MeshSettings.MeshScale
+    );
     meshInstance.SetSurfaceOverrideMaterial(0, mapGeneratorRef.TerrainMaterial);
     // if (material != null) {
     //   meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {

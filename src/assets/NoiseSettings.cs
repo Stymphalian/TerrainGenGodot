@@ -1,7 +1,7 @@
 using Godot;
 
 [GlobalClass]
-public partial class NoiseData : Resource {
+public partial class NoiseSettings : Resource {
   [Export] public Vector2 noiseOffset = new Vector2(0, 0);
   [Export] public int noiseSeed = 0;
   public float noiseScale = 1.0f;

@@ -25,21 +25,9 @@ public partial class MapGenerator : Node {
     NORMAL_MAP,
   };
 
-  // public const int mapChunkSize = 241;
-  public int chunkSizeIndex;
-  [Export] int ChunkSizeIndex {
-    get => chunkSizeIndex;
-    set {
-      chunkSizeIndex = Math.Clamp(value, 0, MeshGenerator.supportedChunkSizes.Length - 1);
-      falloffMap = null;
-      DrawMapInEditor();
-    }
-  }
-  // public int mapChunkSize = 239;
-
-  private int levelOfDetail = 0;
-  private NoiseData noiseData;
-  private TerrainData terrainData;
+  private int editorLevelOfDetail = 0;
+  private HeightMapSettings heightMapSettings;
+  private MeshSettings meshSettings;
   private TextureData textureData;
   private Material terrainMaterial;
   private DRAW_MODE drawMode = DRAW_MODE.NOISE_MAP;
@@ -72,30 +60,30 @@ public partial class MapGenerator : Node {
   }
 
   [Export]
-  public int LevelOfDetail {
-    get => levelOfDetail;
+  public int EditorLevelOfDetail {
+    get => editorLevelOfDetail;
     set {
-      levelOfDetail = Math.Clamp(value, 0, MeshGenerator.numSupportedLODs - 1);
+      editorLevelOfDetail = Math.Clamp(value, 0, MeshSettings.NumSupportedLODs - 1);
       DrawMapInEditor();
     }
   }
 
   [Export]
-  public NoiseData NoiseData {
-    get => noiseData;
+  public HeightMapSettings HeightMapSettings {
+    get => heightMapSettings;
     set {
-      noiseData = value;
-      noiseData.Changed += DrawMapInEditor;
+      heightMapSettings = value;
+      heightMapSettings.Changed += DrawMapInEditor;
       DrawMapInEditor();
     }
   }
 
   [Export]
-  public TerrainData TerrainData {
-    get => terrainData;
+  public MeshSettings MeshSettings {
+    get => meshSettings;
     set {
-      terrainData = value;
-      terrainData.Changed += DrawMapInEditor;
+      meshSettings = value;
+      meshSettings.Changed += DrawMapInEditor;
       DrawMapInEditor();
     }
   }
@@ -126,14 +114,19 @@ public partial class MapGenerator : Node {
     }
   }
 
-  public int mapChunkSize {
-    get => MeshGenerator.supportedChunkSizes[chunkSizeIndex];
+  private bool _visualizeLODWithMaterial = false;
+  [Export] public bool VisualizeLODWithMaterial {
+    get => _visualizeLODWithMaterial;
+    set {
+      _visualizeLODWithMaterial = value;
+      DrawMapInEditor();
+    }
   }
 
   public float[,] FalloffMap {
     get {
       if (falloffMap == null) {
-        falloffMap = FalloffGenerator.GenerateFalloffMap(mapChunkSize + 2);
+        falloffMap = FalloffGenerator.GenerateFalloffMap(meshSettings.BorderedMeshSize);
       }
       return falloffMap;
     }
@@ -165,22 +158,20 @@ public partial class MapGenerator : Node {
 
   public void RequestMapData(Vector2 topLeft, Action<MapData> callback) {
     Thread mapDataThread = new Thread(() => {
-      MapData mapData = GenerateMapData(topLeft);
+      MapData heightMapData = GenerateMapData(topLeft);
       lock (mapDataThreadQueue) {
-        mapDataThreadQueue.Enqueue(new MapThreadInfo<MapData>(callback, mapData));
+        mapDataThreadQueue.Enqueue(new MapThreadInfo<MapData>(callback, heightMapData));
       }
     });
     mapDataThread.Start();
   }
 
-  public void RequestMeshData(MapData mapData, int lod, Action<MeshData> callback) {
+  public void RequestMeshData(MapData heightMapData, int lod, Action<MeshData> callback) {
     Thread meshDataThread = new Thread(() => {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap,
-        terrainData.MeshHeightMultiplier,
-        terrainData.HeightCurve,
-        lod,
-        terrainData.UseFlatShading);
+        heightMapData.HeightMap,
+        meshSettings,
+        lod);
       lock (meshDataThreadQueue) {
         meshDataThreadQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
       }
@@ -189,36 +180,38 @@ public partial class MapGenerator : Node {
   }
 
   public MapData GenerateMapData(Vector2 topLeft) {
-    FastNoiseLite noise = NoiseGenerator.CreateCustom(
-      noiseData.noiseSeed, noiseData.noiseFrequency, noiseData.noiseOctaves,
-      noiseData.noiseLacunarity, noiseData.noisePersistence
+    MapData mapData = HeightMapGenerator.GenerateHeightMap(
+      meshSettings.BorderedMeshSize, 
+      meshSettings.BorderedMeshSize,
+      heightMapSettings,
+      topLeft
     );
 
-    float[,] noiseMap = NoiseGenerator.GenerateNoiseMap(
-      noise,
-      mapChunkSize + 2,
-      mapChunkSize + 2,
-      noiseData.noiseScale,
-      topLeft + noiseData.noiseOffset);
-
-    if (terrainData.UseFalloffMap) {
-      Debug.Assert(FalloffMap.GetLength(0) == noiseMap.GetLength(0), "Falloff map width does not match noise map width");
-      Debug.Assert(FalloffMap.GetLength(1) == noiseMap.GetLength(1), "Falloff map height does not match noise map height");
-      for (int y = 0; y < noiseMap.GetLength(1); y++) {
-        for (int x = 0; x < noiseMap.GetLength(0); x++) {
-          noiseMap[x, y] = Mathf.Clamp(noiseMap[x, y] - FalloffMap[x, y], 0, 1);
+    // TODO: Should be done in the GenerateHeightMap() function
+    if (heightMapSettings.UseFalloffMap) {
+      Debug.Assert(FalloffMap.GetLength(0) == mapData.HeightMap.GetLength(0), "Falloff map width does not match noise map width");
+      Debug.Assert(FalloffMap.GetLength(1) == mapData.HeightMap.GetLength(1), "Falloff map height does not match noise map height");
+      for (int y = 0; y < mapData.HeightMap.GetLength(1); y++) {
+        for (int x = 0; x < mapData.HeightMap.GetLength(0); x++) {
+          float falloffValue = FalloffMap[x, y] * (mapData.MaxHeight - mapData.MinHeight);
+          mapData.HeightMap[x, y] = Mathf.Clamp(
+            mapData.HeightMap[x, y] - falloffValue,
+            mapData.MinHeight,
+            mapData.MaxHeight
+          );
         }
       }
     }
 
     textureData.UpdateMeshHeights(
       (ShaderMaterial)terrainMaterial,
-      terrainData.MinHeight,
-      terrainData.MaxHeight
+      heightMapSettings.MinHeight,
+      heightMapSettings.MaxHeight
     );
-    GD.Print("Min Height: " + terrainData.MinHeight, " Max Height: " + terrainData.MaxHeight);
+    // GD.Print("Min Height: " + heightMapSettings.MinHeight, " Max Height: " + heightMapSettings.MaxHeight);
+    // GD.Print("Min Height: " + mapData.MinHeight, " Max Height: " + mapData.MaxHeight);
 
-    return new MapData(noiseMap);
+    return mapData;
   }
 
   public void DrawMapInEditor() {
@@ -226,29 +219,25 @@ public partial class MapGenerator : Node {
       GD.PrintErr("MapDisplay node not found!");
       return;
     }
-    MapData mapData = GenerateMapData(Vector2.Zero);
+    MapData heightMapData = GenerateMapData(Vector2.Zero);
 
     if (drawMode == DRAW_MODE.NOISE_MAP) {
-      Texture2D texture = TextureGenerator.TextureFromHeightMap(mapData.HeightMap);
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(heightMapData.HeightMap);
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.MESH) {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap,
-        terrainData.MeshHeightMultiplier,
-        terrainData.HeightCurve,
-        levelOfDetail,
-        terrainData.UseFlatShading);
+        heightMapData.HeightMap,
+        meshSettings,
+        editorLevelOfDetail);
       display.DrawMesh(meshData);
     } else if (drawMode == DRAW_MODE.FALLOFF_MAP) {
       Texture2D texture = TextureGenerator.TextureFromHeightMap(FalloffMap);
       display.DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.NORMAL_MAP) {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        mapData.HeightMap,
-        terrainData.MeshHeightMultiplier,
-        terrainData.HeightCurve,
-        levelOfDetail,
-        terrainData.UseFlatShading);
+        heightMapData.HeightMap,
+        meshSettings,
+        editorLevelOfDetail);
 
       Color[,] normalColorMap = new Color[meshData.meshLength, meshData.meshLength];
       for (int y = 0; y < meshData.meshLength; y++) {

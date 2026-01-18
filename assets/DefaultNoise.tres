@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="NoiseData" load_steps=2 format=3 uid="uid://d0tjcbjbg30hx"]
+[gd_resource type="Resource" script_class="NoiseSettings" load_steps=2 format=3 uid="uid://d0tjcbjbg30hx"]
 
-[ext_resource type="Script" uid="uid://d2w02nu3r8krf" path="res://src/assets/NoiseData.cs" id="1_73hfu"]
+[ext_resource type="Script" uid="uid://d2w02nu3r8krf" path="res://src/assets/NoiseSettings.cs" id="1_73hfu"]
 
 [resource]
 script = ExtResource("1_73hfu")

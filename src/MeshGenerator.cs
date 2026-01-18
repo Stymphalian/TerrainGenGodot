@@ -1,20 +1,14 @@
 using Godot;
 
 public static class MeshGenerator {
-
-  public const int numSupportedLODs = 5;
-  public const int numSupportedChunkSizes = 9;
-  public static readonly int[] supportedChunkSizes = {47, 71, 95, 119, 143, 167, 191, 215, 239};
-
   // Generate the terrain mesh from the height map. Starting from 0,0 as the top-left corner
   // and extending to width,height as the bottom-right corner.
   // This is to match the TerrainChunk generation.
   public static MeshData GenerateTerrainMesh(
     float[,] heightMap,
-    float heightMultiplier,
-    Curve heightCurve,
-    int levelOfDetail,
-    bool useFlatShading) {
+    MeshSettings meshSettings,
+    int levelOfDetail
+    ) {
 
     int meshLODIncr = (levelOfDetail == 0) ? 1 : levelOfDetail * 2;
     int borderLength = heightMap.GetLength(0);
@@ -39,16 +33,18 @@ public static class MeshGenerator {
       }
     }
 
-    MeshData meshData = new MeshData(verticesPerLine, useFlatShading);
+    MeshData meshData = new MeshData(verticesPerLine, meshSettings.UseFlatShading);
     for (int z = 0; z < borderLength; z += meshLODIncr) {
       for (int x = 0; x < borderLength; x += meshLODIncr) {
-        float heightMult = heightCurve.Sample(heightMap[x, z]) * heightMultiplier;
-        float heightValue = heightMap[x, z] * heightMult;
+        float heightValue = heightMap[x, z];
         Vector2 uv = new Vector2(
-          (x - meshLODIncr) / (float)meshLength, (z - meshLODIncr) / (float)meshLength
+          (x - meshLODIncr) / (float)meshLength,
+          (z - meshLODIncr) / (float)meshLength
         );
         Vector3 vec = new Vector3(
-          uv.X * meshLengthOriginal, heightValue, uv.Y * meshLengthOriginal);
+          uv.X * meshLengthOriginal * meshSettings.MeshScale,
+          heightValue,
+          uv.Y * meshLengthOriginal * meshSettings.MeshScale);
 
         int vertexIndex = vertexIndices[x, z];
         meshData.AddVertex(vertexIndex, vec, uv);

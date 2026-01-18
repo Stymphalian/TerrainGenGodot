@@ -1,12 +1,13 @@
-using Godot;
+public partial class MapData
+{
+    public float MinHeight;
+    public float MaxHeight;
+    public float[,] HeightMap;
 
-public struct MapData {
-  public readonly float[,] HeightMap;
-  public readonly Color[,] ColorMap;
-
-  // public MapData(float[,] heightMap, Color[,] colorMap) {
-  public MapData(float[,] heightMap) {
-    HeightMap = heightMap;
-    // ColorMap = colorMap;
-  }
+    public MapData(float minHeight, float maxHeight, float[,] heightMap)
+    {
+        HeightMap = heightMap;
+        MinHeight = minHeight;
+        MaxHeight = maxHeight;
+    }
 }
