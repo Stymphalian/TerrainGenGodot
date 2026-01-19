@@ -4,42 +4,46 @@ using Godot;
 public partial class TerrainChunk {
   public MeshInstance3D Mesh;
   public StaticBody3D CollisionObject;
+  public event System.Action<TerrainChunk, bool> OnVisibilityChanged;
+  public static float colliderGenerationDistanceThreshold = 5.0f;
+  public bool isDirty = true;
 
   private CollisionShape3D CollisionShape;
   private Rect2 Bounds;
-  private Vector2 ChunkCoords;
-  private Vector2 ChunkPosition;
-  private float MeshChunkScale;
-
-  private MapGenerator mapGeneratorRef;
+  public Vector2 ChunkCoords;
+  private Vector2 ChunkPosition;  
   private MapData mapData;
   private StandardMaterial3D material;
   private LevelOfDetailSetting[] LODSettings;
   private LODMesh[] lodInfos;
+  private MeshSettings meshSettings;
+  private HeightMapSettings heightMapSettings;
+  private Material terrainMaterial;
 
   private int previousLODIndex = -1;
   private int colliderLODMeshIndex = 0;
   private bool hasReceivedMapData = false;
   private bool hasCollisionMesh = false;
-
-  public bool isDirty = true;
+  private bool visualizeLODWithMaterial = false;
 
   public TerrainChunk(
-    MapGenerator mapGenRef,
     Vector2 chunkCoords,
-    float meshWorldSize,
-    float meshChunkScale,
     LevelOfDetailSetting[] lodSettings,
-    int colliderLODMeshIndex
+    int colliderLODMeshIndex,
+    MeshSettings meshSettings,
+    HeightMapSettings heightMapSettings,
+    Material terrainMaterial
     ) {
-    mapGeneratorRef = mapGenRef;
+    this.meshSettings = meshSettings;
+    this.heightMapSettings = heightMapSettings;
+    this.terrainMaterial = terrainMaterial;
+
     LODSettings = lodSettings;
     ChunkCoords = chunkCoords;
     ChunkPosition = new Vector2(
-      ChunkCoords.X * meshWorldSize - meshWorldSize / 2,
-      ChunkCoords.Y * meshWorldSize - meshWorldSize / 2
+      ChunkCoords.X * meshSettings.MeshWorldSize - meshSettings.MeshWorldSize / 2,
+      ChunkCoords.Y * meshSettings.MeshWorldSize - meshSettings.MeshWorldSize / 2
     );
-    MeshChunkScale = meshChunkScale;
     this.colliderLODMeshIndex = colliderLODMeshIndex;
     Mesh = new MeshInstance3D();
     Mesh.Name = $"TerrainChunk at {ChunkCoords} {ChunkPosition}";
@@ -54,8 +58,10 @@ public partial class TerrainChunk {
       lodInfos[i] = new LODMesh(lodSettings[i].lod);
       lodInfos[i].UpdateCallback += OnLODMeshReceived;
     }
+  }
 
-    ResetTerrainChunk(meshWorldSize, meshChunkScale);
+  public void Load() {
+    ResetTerrainChunk(meshSettings.MeshWorldSize, meshSettings.MeshScale);
   }
 
   private void OnLODMeshReceived() {
@@ -79,17 +85,17 @@ public partial class TerrainChunk {
       AlbedoColor = new Color(1, 0, 0), // Start with fully red (LOD 0)
     };
 
-    if (mapGeneratorRef.VisualizeLODWithMaterial) {
+    if (visualizeLODWithMaterial) {
       Mesh.SetSurfaceOverrideMaterial(0, material);  
     } else {
-      Mesh.SetSurfaceOverrideMaterial(0, mapGeneratorRef.TerrainMaterial);
+      Mesh.SetSurfaceOverrideMaterial(0, terrainMaterial);
     }    
   }
 
   public int getLodIndex(float distanceToCenter) {
     int lodIndex = LODSettings.Length - 1;
     for (int i = 0; i < LODSettings.Length - 1; i++) {
-      if (distanceToCenter <= LODSettings[i].distanceThreshold * mapGeneratorRef.MeshSettings.MeshScale) {
+      if (distanceToCenter <= LODSettings[i].distanceThreshold * meshSettings.MeshScale) {
         lodIndex = i;
         break;
       }
@@ -101,11 +107,12 @@ public partial class TerrainChunk {
     if (visualize && material != null) {
       Mesh.SetSurfaceOverrideMaterial(0, material);
     } else {
-      Mesh.SetSurfaceOverrideMaterial(0, mapGeneratorRef.TerrainMaterial);
+      Mesh.SetSurfaceOverrideMaterial(0, terrainMaterial);
     }
   }
 
   public void ResetTerrainChunk(float meshWorldSize, float meshChunkScale) {
+    GD.Print($"Resetting terrain chunk at {ChunkCoords}");
     hasCollisionMesh = false;
     hasReceivedMapData = false;
     previousLODIndex = -1;
@@ -127,7 +134,15 @@ public partial class TerrainChunk {
       ChunkCoords.X * meshWorldSize / meshChunkScale,
       ChunkCoords.Y * meshWorldSize / meshChunkScale
     );
-    mapGeneratorRef.RequestMapData(chunkPositionNoScale, OnMapDataReceived);
+    ThreadedDataRequestor.RequestData(
+      () => HeightMapGenerator.GenerateHeightMap(
+        meshSettings.BorderedMeshSize, 
+        meshSettings.BorderedMeshSize,
+        heightMapSettings,
+        chunkPositionNoScale
+      ),
+      (object o) => OnMapDataReceived(o as MapData)
+    );
     
     // Mesh.Position = new Vector3(chunkPosition.X, 0, chunkPosition.Y) * terrainChunkScale;
     // Mesh.Scale = Vector3.One * terrainChunkScale;
@@ -135,8 +150,11 @@ public partial class TerrainChunk {
     // CollisionShape.Scale = Vector3.One * terrainChunkScale;
   }
 
+  private float maxViewDist {
+    get => LODSettings[LODSettings.Length - 1].distanceThreshold * meshSettings.MeshScale;
+  }
 
-  public void UpdateTerrainChunk(Vector3 playerPosition, float maxViewDist) {
+  public void UpdateTerrainChunk(Vector3 playerPosition) {
     if (!hasReceivedMapData) {
       return;
     }
@@ -148,8 +166,8 @@ public partial class TerrainChunk {
       Mathf.Clamp(playerPos.Y, Bounds.Position.Y, Bounds.Position.Y + Bounds.Size.Y)
     );
     float distanceToCenter = (closestPoint - playerPos).Length();
+    bool wasVisible = IsChunkVisible();
     bool visible = distanceToCenter <= maxViewDist;
-    Mesh.Visible = visible;
 
     if (visible) {
       int lodIndex = getLodIndex(distanceToCenter);
@@ -157,19 +175,31 @@ public partial class TerrainChunk {
       // Load the terrain mesh for this LOD if not already loaded
       if (previousLODIndex != lodIndex) {
         if (lodInfos[lodIndex].HasReceivedMesh) {
-          // GD.Print($"Updating LOD to {lodIndex}");
+          GD.Print($"Updating chunk {ChunkCoords} from {previousLODIndex} LOD to {lodIndex}");
           previousLODIndex = lodIndex;
           Mesh.Mesh = lodInfos[lodIndex].Mesh;
           UpdateMaterialColor(lodIndex);
         } else if (!lodInfos[lodIndex].HasRequestedMesh) {
-          lodInfos[lodIndex].RequestMesh(mapGeneratorRef, mapData);
+          lodInfos[lodIndex].RequestMesh(meshSettings, mapData);
         }
       }
     }
+
+    if (wasVisible != visible) {
+      SetChunkVisible(visible);
+      OnVisibilityChanged?.Invoke(this, visible);
+    }
   }
 
-  public void UpdateCollisionMesh(Vector3 playerPosition, float collisionCheckDistance) {
+  private float collisionCheckDistance {
+    get => colliderGenerationDistanceThreshold * meshSettings.MeshScale;
+  }
+
+  public void UpdateCollisionMesh(Vector3 playerPosition) {
     if (hasCollisionMesh) {
+      return;
+    }
+    if (!hasReceivedMapData) {
       return;
     }
 
@@ -191,7 +221,7 @@ public partial class TerrainChunk {
     } else if (collisionLODMesh.HasRequestedMesh == false) {
       // GD.Print("Requesting collision LOD mesh ");
       // CollisionShape.Shape = lodInfos[lodIndex].Mesh.CreateTrimeshShape();
-      collisionLODMesh.RequestMesh(mapGeneratorRef, mapData);
+      collisionLODMesh.RequestMesh(meshSettings, mapData);
     }
   }
 
@@ -206,7 +236,7 @@ public partial class TerrainChunk {
 
   private void UpdateMaterialColor(int lodIndex) {
     if (material == null) return;
-    if (!mapGeneratorRef.VisualizeLODWithMaterial) return;
+    if (!visualizeLODWithMaterial) return;
     // LOD 0 = fully green (0, 1, 0)
     // As LOD increases, add lighter shades of red
     float increments = 1.0f / LODSettings.Length;
@@ -227,10 +257,19 @@ public partial class TerrainChunk {
       // this.updateCallback = updateCallback;
     }
 
-    public void RequestMesh(MapGenerator mapGeneratorRef, MapData mapData) {
+    public void RequestMesh(MeshSettings meshSettings, MapData mapData) {
       // GD.Print($"Requesting mesh for LOD {LOD}");
+      // GD.Print($"Requesting mesh with {meshSettings} and mapData {mapData} for LOD {LOD}" );
       HasRequestedMesh = true;
-      mapGeneratorRef.RequestMeshData(mapData, LOD, OnMeshDataReceived);
+      ThreadedDataRequestor.RequestData(
+        () => MeshGenerator.GenerateTerrainMesh(
+          mapData.HeightMap,
+          meshSettings,
+          LOD
+        ),
+        (object o) => OnMeshDataReceived(o as MeshData)
+      );
+      // mapGeneratorRef.RequestMeshData(mapData, LOD, OnMeshDataReceived);
     }
 
     public void OnMeshDataReceived(MeshData meshData) {

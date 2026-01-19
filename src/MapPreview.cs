@@ -1,22 +1,13 @@
 using Godot;
 using System;
-using System.Threading;
-using System.Collections.Generic;
 using System.Diagnostics;
 
+[GlobalClass]
+public partial class MapPreview : Node3D {
 
-public class MapThreadInfo<T> {
-  public readonly Action<T> Callback;
-  public readonly T Data;
-
-  public MapThreadInfo(Action<T> callback, T data) {
-    Callback = callback;
-    Data = data;
-  }
-};
-
-// [Tool]
-public partial class MapGenerator : Node {
+  [Export] public MeshInstance3D meshInstance {get; set;}
+  [Export] public bool showNormals {get; set;} = true;
+  [Export] public float normalLength {get; set;} = 1.0f;
   public enum DRAW_MODE {
     NOISE_MAP,
     // COLOR_MAP,
@@ -32,8 +23,6 @@ public partial class MapGenerator : Node {
   private Material terrainMaterial;
   private DRAW_MODE drawMode = DRAW_MODE.NOISE_MAP;
   private float[,] falloffMap;
-
-  [Export] public MapDisplay display { get; set; }
 
   // Add an editor button to regenerate the map
   [Export]
@@ -94,11 +83,11 @@ public partial class MapGenerator : Node {
     set {
       GD.Print("Setting TextureData");
       textureData = value;
-      textureData.ApplyToMaterial(terrainMaterial);  
+      textureData.ApplyToMaterial(terrainMaterial, heightMapSettings.MinHeight, heightMapSettings.MaxHeight);  
       DrawMapInEditor();
       textureData.Changed += () => {
         DrawMapInEditor();
-        textureData.ApplyToMaterial(terrainMaterial);
+        textureData.ApplyToMaterial(terrainMaterial, heightMapSettings.MinHeight, heightMapSettings.MaxHeight);
       };
       
     }
@@ -109,7 +98,7 @@ public partial class MapGenerator : Node {
     get => terrainMaterial;
     set {
       terrainMaterial = value;
-      textureData.ApplyToMaterial(terrainMaterial);
+      textureData.ApplyToMaterial(terrainMaterial, heightMapSettings.MinHeight, heightMapSettings.MaxHeight);
       DrawMapInEditor();
     }
   }
@@ -132,52 +121,12 @@ public partial class MapGenerator : Node {
     }
   }
 
+  private MeshInstance3D normalVisualizationMesh;
+
   public override void _Ready() {
     DrawMapInEditor();
   }
 
-  private Queue<MapThreadInfo<MapData>> mapDataThreadQueue = new Queue<MapThreadInfo<MapData>>();
-  private Queue<MapThreadInfo<MeshData>> meshDataThreadQueue = new Queue<MapThreadInfo<MeshData>>();
-
-  public override void _Process(double delta) {
-    base._Process(delta);
-    if (mapDataThreadQueue.Count > 0) {
-      for (int index = 0; index < mapDataThreadQueue.Count; index++) {
-        var threadData = mapDataThreadQueue.Dequeue();
-        threadData.Callback(threadData.Data);
-      }
-    }
-
-    if (meshDataThreadQueue.Count > 0) {
-      for (int index = 0; index < meshDataThreadQueue.Count; index++) {
-        var threadData = meshDataThreadQueue.Dequeue();
-        threadData.Callback(threadData.Data);
-      }
-    }
-  }
-
-  public void RequestMapData(Vector2 topLeft, Action<MapData> callback) {
-    Thread mapDataThread = new Thread(() => {
-      MapData heightMapData = GenerateMapData(topLeft);
-      lock (mapDataThreadQueue) {
-        mapDataThreadQueue.Enqueue(new MapThreadInfo<MapData>(callback, heightMapData));
-      }
-    });
-    mapDataThread.Start();
-  }
-
-  public void RequestMeshData(MapData heightMapData, int lod, Action<MeshData> callback) {
-    Thread meshDataThread = new Thread(() => {
-      MeshData meshData = MeshGenerator.GenerateTerrainMesh(
-        heightMapData.HeightMap,
-        meshSettings,
-        lod);
-      lock (meshDataThreadQueue) {
-        meshDataThreadQueue.Enqueue(new MapThreadInfo<MeshData>(callback, meshData));
-      }
-    });
-    meshDataThread.Start();
-  }
 
   public MapData GenerateMapData(Vector2 topLeft) {
     MapData mapData = HeightMapGenerator.GenerateHeightMap(
@@ -203,36 +152,27 @@ public partial class MapGenerator : Node {
       }
     }
 
-    textureData.UpdateMeshHeights(
-      (ShaderMaterial)terrainMaterial,
-      heightMapSettings.MinHeight,
-      heightMapSettings.MaxHeight
-    );
-    // GD.Print("Min Height: " + heightMapSettings.MinHeight, " Max Height: " + heightMapSettings.MaxHeight);
-    // GD.Print("Min Height: " + mapData.MinHeight, " Max Height: " + mapData.MaxHeight);
-
     return mapData;
   }
 
   public void DrawMapInEditor() {
-    if (display == null) {
-      GD.PrintErr("MapDisplay node not found!");
+    if (heightMapSettings == null || meshSettings == null) {
       return;
     }
     MapData heightMapData = GenerateMapData(Vector2.Zero);
 
     if (drawMode == DRAW_MODE.NOISE_MAP) {
-      Texture2D texture = TextureGenerator.TextureFromHeightMap(heightMapData.HeightMap);
-      display.DrawTexture(texture);
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(heightMapData);
+      DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.MESH) {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
         heightMapData.HeightMap,
         meshSettings,
         editorLevelOfDetail);
-      display.DrawMesh(meshData);
+      DrawMesh(meshData);
     } else if (drawMode == DRAW_MODE.FALLOFF_MAP) {
-      Texture2D texture = TextureGenerator.TextureFromHeightMap(FalloffMap);
-      display.DrawTexture(texture);
+      Texture2D texture = TextureGenerator.TextureFromHeightMap(new MapData(0.0f, 1.0f, FalloffMap));
+      DrawTexture(texture);
     } else if (drawMode == DRAW_MODE.NORMAL_MAP) {
       MeshData meshData = MeshGenerator.GenerateTerrainMesh(
         heightMapData.HeightMap,
@@ -251,8 +191,71 @@ public partial class MapGenerator : Node {
         }
       }
       Texture2D texture = TextureGenerator.TextureFromColorMap(normalColorMap);
-      display.DrawTexture(texture);
+      DrawTexture(texture);
     }
   }
-}
 
+  public void DrawTexture(Texture2D texture) {
+    // Find the MeshInstance child
+    if (meshInstance == null) {
+      GD.PrintErr("MeshInstance3D node not found!");
+      return;
+    }
+    // meshInstance.Mesh = new PlaneMesh();
+    // meshInstance.Scale = Vector3.One * 100 * GetNode<MapGenerator>("/root/Root/MapGenerator").TerrainData.TerrainUniformScale;
+    meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {
+      AlbedoTexture = texture,
+      TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+      TextureRepeat = false,
+      ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
+    });
+  }
+
+  // public void DrawMesh(MeshData meshData, Texture2D texture) {
+  public void DrawMesh(MeshData meshData) {
+    if (meshInstance == null) {
+      GD.PrintErr("MeshInstance3D node not found!");
+      return;
+    }
+
+    // MapGenerator mapGeneratorRef =  GetNode<MapGenerator>("/root/Root/MapGenerator");
+    meshInstance.Mesh = meshData.CreateMesh();
+    meshInstance.Scale = new Vector3(
+      meshSettings.MeshScale,
+      1.0f,
+      meshSettings.MeshScale
+    );
+    meshInstance.SetSurfaceOverrideMaterial(0, terrainMaterial);
+    // if (material != null) {
+    //   meshInstance.SetSurfaceOverrideMaterial(0, new StandardMaterial3D {
+    //     // AlbedoTexture = texture,
+    //     TextureFilter = BaseMaterial3D.TextureFilterEnum.Nearest,
+    //     TextureRepeat = false,
+    //     ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel, // Changed from PerVertex to PerPixel for proper lighting
+    //   });  
+    // }
+
+    // Draw normal visualization if enabled
+    if (showNormals) {
+      if (normalVisualizationMesh == null) {
+        normalVisualizationMesh = new MeshInstance3D();
+        normalVisualizationMesh.Name = "NormalVisualization";
+        AddChild(normalVisualizationMesh);
+      }
+
+      normalVisualizationMesh.Mesh = meshData.CreateNormalVisualizationMesh(normalLength);
+
+      // Load and apply the normal visualization shader
+      var shader = GD.Load<Shader>("res://NormalVisualization.gdshader");
+      var shaderMaterial = new ShaderMaterial();
+      shaderMaterial.Shader = shader;
+      shaderMaterial.SetShaderParameter("normal_color", new Color(0, 1, 1, 1)); // Cyan color
+
+      normalVisualizationMesh.SetSurfaceOverrideMaterial(0, shaderMaterial);
+    } else if (normalVisualizationMesh != null) {
+      normalVisualizationMesh.QueueFree();
+      normalVisualizationMesh = null;
+    }
+  }
+
+}

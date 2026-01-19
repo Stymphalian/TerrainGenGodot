@@ -1,18 +1,18 @@
-[gd_scene load_steps=22 format=4 uid="uid://kl4an827n7xi"]
+[gd_scene load_steps=24 format=3 uid="uid://kl4an827n7xi"]
 
 [ext_resource type="Script" uid="uid://bnfceam7xs4yd" path="res://src/MainCamera.cs" id="1_6t2qg"]
 [ext_resource type="Script" uid="uid://bf846f14k57u1" path="res://src/DirectionLight.cs" id="1_tjrhv"]
-[ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapDisplay.cs" id="2_kpg5t"]
-[ext_resource type="Script" uid="uid://qxctxw6a5sho" path="res://src/MapGenerator.cs" id="3_ly0ex"]
-[ext_resource type="Script" uid="uid://ca43crxfb1h0b" path="res://src/EndlessTerrain.cs" id="5_cv8oj"]
+[ext_resource type="Script" uid="uid://s1a3tsmce435" path="res://src/MapPreview.cs" id="2_kpg5t"]
 [ext_resource type="Resource" uid="uid://c6s8qvhgfo6mq" path="res://assets/DefaultHeightMapSettings.tres" id="5_orm1w"]
 [ext_resource type="Script" uid="uid://bbmkca2kj0hyp" path="res://src/FalloffGenerator.cs" id="5_tcwqj"]
-[ext_resource type="Resource" uid="uid://bt7swpfu8mttl" path="res://assets/DefaultMeshSetings.tres" id="6_orm1w"]
+[ext_resource type="Resource" uid="uid://bt7swpfu8mttl" path="res://assets/DefaultMeshSettings.tres" id="6_orm1w"]
 [ext_resource type="Curve" uid="uid://bcp2lebko8xsn" path="res://assets/FalloffMapCurve.tres" id="6_vlw3j"]
 [ext_resource type="Resource" uid="uid://co5edyae5ucci" path="res://assets/DefaultTexture.tres" id="7_usu4c"]
-[ext_resource type="Shader" uid="uid://cu37wgmq4kop6" path="res://assets/DefaultShader.gdshader" id="8_jtuxx"]
-[ext_resource type="Texture2D" uid="uid://lmguthjbjk0c" path="res://assets/textures/Grass.png" id="9_orm1w"]
+[ext_resource type="Material" uid="uid://jppfdq1ow0wl" path="res://assets/DefaultMaterial.tres" id="8_0xc1k"]
 [ext_resource type="Script" uid="uid://84dhm8gf7ma8" path="res://src/Player3D.cs" id="9_player"]
+[ext_resource type="Script" uid="uid://ckuv8e15rvoa0" path="res://src/ThreadedDataRequestor.cs" id="12_0xc1k"]
+[ext_resource type="Script" uid="uid://8rrr57yqfj3u" path="res://src/TerrainGenerator.cs" id="12_w7rwx"]
+[ext_resource type="Script" uid="uid://30mu2kyxvsf" path="res://src/assets/LevelOfDetailSetting.cs" id="13_gl7h1"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tjrhv"]
 albedo_color = Color(1.8922116, 1.4000254, 0, 1)
@@ -28,19 +28,19 @@ shading_mode = 2
 diffuse_mode = 1
 disable_ambient_light = true
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_orm1w"]
-render_priority = 0
-shader = ExtResource("8_jtuxx")
-shader_parameter/layerCount = 0
-shader_parameter/baseColors = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/baseStartHeights = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/baseBlends = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/baseColorStrengths = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/baseTextureScales = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
-shader_parameter/minHeight = 0.0
-shader_parameter/maxHeight = 0.0
-shader_parameter/test_texture = ExtResource("9_orm1w")
-shader_parameter/test_scale = 5.0
+[sub_resource type="Resource" id="Resource_mqls2"]
+script = ExtResource("13_gl7h1")
+distanceThreshold = 100
+
+[sub_resource type="Resource" id="Resource_rs6jf"]
+script = ExtResource("13_gl7h1")
+lod = 1
+distanceThreshold = 250
+
+[sub_resource type="Resource" id="Resource_la8l5"]
+script = ExtResource("13_gl7h1")
+lod = 4
+distanceThreshold = 400
 
 [sub_resource type="BoxMesh" id="BoxMesh_cv8oj"]
 
@@ -63,37 +63,41 @@ mesh = SubResource("SphereMesh_6rk8u")
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 1500, 0)
 current = true
 script = ExtResource("1_6t2qg")
+Mode = 0
 PlayerPath = NodePath("../Player")
 MoveSpeed = 500.0
-
-[node name="MapDisplay" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
-visible = false
-script = ExtResource("2_kpg5t")
-meshInstance = NodePath("MeshInstance3D")
-showNormals = false
-metadata/_custom_type_script = "uid://s1a3tsmce435"
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="MapDisplay"]
-mesh = SubResource("PlaneMesh_kpg5t")
-surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
-
-[node name="MapGenerator" type="Node" parent="." node_paths=PackedStringArray("display")]
-script = ExtResource("3_ly0ex")
-display = NodePath("../MapDisplay")
-RegenerateMapButton = true
-DrawMode = 1
-HeightMapSettings = ExtResource("5_orm1w")
-MeshSettings = ExtResource("6_orm1w")
-TextureData = ExtResource("7_usu4c")
-TerrainMaterial = SubResource("ShaderMaterial_orm1w")
 
 [node name="FalloffGenerator" type="Node" parent="."]
 script = ExtResource("5_tcwqj")
 curve = ExtResource("6_vlw3j")
 
-[node name="EndlessTerrain" type="Node3D" parent="."]
-script = ExtResource("5_cv8oj")
-colliderGenerationDistanceThreshold = 25.0
+[node name="ThreadedDataRequestor" type="Node" parent="."]
+script = ExtResource("12_0xc1k")
+
+[node name="MapPreview" type="Node3D" parent="." node_paths=PackedStringArray("meshInstance")]
+visible = false
+script = ExtResource("2_kpg5t")
+meshInstance = NodePath("MeshInstance3D")
+showNormals = false
+DrawMode = 3
+EditorLevelOfDetail = 1
+HeightMapSettings = ExtResource("5_orm1w")
+MeshSettings = ExtResource("6_orm1w")
+TextureData = ExtResource("7_usu4c")
+TerrainMaterial = ExtResource("8_0xc1k")
+metadata/_custom_type_script = "uid://s1a3tsmce435"
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MapPreview"]
+mesh = SubResource("PlaneMesh_kpg5t")
+surface_material_override/0 = SubResource("StandardMaterial3D_ly0ex")
+
+[node name="TerrainGenerator" type="Node3D" parent="."]
+script = ExtResource("12_w7rwx")
+detailLevels = [SubResource("Resource_mqls2"), SubResource("Resource_rs6jf"), SubResource("Resource_la8l5")]
+meshSettings = ExtResource("6_orm1w")
+heightMapSettings = ExtResource("5_orm1w")
+textureSettings = ExtResource("7_usu4c")
+terrainMaterial = ExtResource("8_0xc1k")
 
 [node name="Markers" type="Node3D" parent="."]
 visible = false

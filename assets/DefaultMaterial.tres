@@ -1,3 +1,18 @@
-[gd_resource type="StandardMaterial3D" format=3 uid="uid://jppfdq1ow0wl"]
+[gd_resource type="ShaderMaterial" load_steps=3 format=4 uid="uid://jppfdq1ow0wl"]
+
+[ext_resource type="Shader" uid="uid://cu37wgmq4kop6" path="res://assets/DefaultShader.gdshader" id="1_ttngs"]
+[ext_resource type="Texture2D" uid="uid://lmguthjbjk0c" path="res://assets/textures/Grass.png" id="2_vwgko"]
 
 [resource]
+render_priority = 0
+shader = ExtResource("1_ttngs")
+shader_parameter/layerCount = 0
+shader_parameter/baseColors = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/baseStartHeights = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/baseBlends = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/baseColorStrengths = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/baseTextureScales = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/minHeight = 0.0
+shader_parameter/maxHeight = 0.0
+shader_parameter/test_texture = ExtResource("2_vwgko")
+shader_parameter/test_scale = 5.0

@@ -21,9 +21,9 @@ public static class TextureGenerator {
       return texture;
   }
 
-  public static Texture2D TextureFromHeightMap(float[,] heightMap) {
-      int width = heightMap.GetLength(0);
-      int height = heightMap.GetLength(1);
+  public static Texture2D TextureFromHeightMap(MapData mapData) {
+      int width = mapData.HeightMap.GetLength(0);
+      int height = mapData.HeightMap.GetLength(1);
 
       // Create a new texture and assign it to the MeshInstance which the child of this component
       Color[,] colorMap = new Color[width, height];
@@ -31,7 +31,7 @@ public static class TextureGenerator {
       // Fill the image with noise pattern
       for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
-          float rgb = heightMap[x, y];
+          float rgb = mapData.HeightMap[x, y] / (mapData.MaxHeight - mapData.MinHeight);
           colorMap[x, y] = new Color(rgb, rgb, rgb, 1.0f);;
         }
       }

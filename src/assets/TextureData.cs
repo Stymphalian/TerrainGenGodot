@@ -35,7 +35,7 @@ public partial class TextureData : Resource {
     }
   }
 
-  public void ApplyToMaterial(Material material) {
+  public void ApplyToMaterial(Material material, float minHeight, float maxHeight) {
     if (material is ShaderMaterial) {
       var shaderMaterial = material as ShaderMaterial;
       shaderMaterial.SetShaderParameter("layerCount", layers.Length);
@@ -44,6 +44,8 @@ public partial class TextureData : Resource {
       shaderMaterial.SetShaderParameter("baseBlends", layers.Select(x => x.BlendStrength).ToArray());
       shaderMaterial.SetShaderParameter("baseColorStrengths", layers.Select(x => x.TintStrength).ToArray());
       shaderMaterial.SetShaderParameter("baseTextureScales", layers.Select(x => x.TextureScale).ToArray());
+      shaderMaterial.SetShaderParameter("minHeight", minHeight);
+      shaderMaterial.SetShaderParameter("maxHeight", maxHeight);
       
       Texture2DArray textureArray = GenerateTextureArray(layers.Select(x => x.Texture).ToList());
       shaderMaterial.SetShaderParameter("baseTextures", textureArray);
@@ -63,12 +65,5 @@ public partial class TextureData : Resource {
     Texture2DArray textureArray = new Texture2DArray();
     textureArray.CreateFromImages(images);
     return textureArray;
-  }
-
-  public void UpdateMeshHeights(ShaderMaterial material, float minHeight, float maxHeight) {
-    material.SetShaderParameter("minHeight", minHeight);
-    material.SetShaderParameter("maxHeight", maxHeight);
-    // material.SetShaderParameter("minHeight", minHeight);
-    // material.SetShaderParameter("maxHeight", maxHeight);
   }
 };
