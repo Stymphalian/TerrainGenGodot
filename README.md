@@ -17,7 +17,7 @@ is a different commit in the history (`git log`)
 ![alt text](.docs/demo_01.png)
 
 ### Procedular Generation
-<video controls src=".docs/demo_03_Proc Gen 02.webm" title="alt text"></video>
+![alt text](.docs/demo_03_Proc_Gen_02.gif)
 
 ### Colors
 ![alt text](.docs/demo_04.png)
@@ -26,10 +26,12 @@ is a different commit in the history (`git log`)
 ![alt text](.docs/demo_06.png)
 
 ### Endless Terrain
-<video controls src=".docs/demo_08.webm" title="Title"></video>
+![alt text](.docs/demo_08.gif)
 
 ### LOD switching
-<video controls src=".docs/demo_07.webm" title="Title"></video>
+![alt text](.docs/demo_07.gif)
+
+### Seams
 ![alt text](.docs/demo_09.png)
 
 ### Falloff
@@ -39,7 +41,7 @@ is a different commit in the history (`git log`)
 ![alt text](.docs/demo_12_normals.png)
 
 ### Collisions
-<video controls src=".docs/demo_13_collissions.webm" title="Title"></video>
+![alt text](.docs/demo_13_collissions.gif)
 
 ### Flat Shading
 Normal Shading | Flat Shaded
